@@ -505,25 +505,11 @@ function App() {
           case "thinking":
             break;
           case "tool_call":
-            setAiResponse((prev) =>
-              prev +
-                `\nTool: ${(ev.payload as { name: string }).name}${(ev.payload as { path?: string }).path ? ` ${(ev.payload as { path?: string }).path}` : ""}`
-            );
-            break;
           case "tool_result":
-            setAiResponse((prev) =>
-              prev +
-                `\n  → ${(ev.payload as { success: boolean }).success ? "OK" : "ERROR"}: ${(ev.payload as { output: string }).output}`
-            );
-            break;
           case "patch_apply_started":
-            setAiResponse((prev) =>
-              prev + `\n  Patch: ${(ev.payload as { path: string }).path} …`
-            );
             break;
           case "patch_apply_success": {
             const patchedPath = (ev.payload as { path: string }).path;
-            setAiResponse((prev) => prev + `\n  ✓ Patched ${patchedPath}`);
             if (invokeRef.current && patchedPath === currentFilePath) {
               invokeRef
                 .current("read_project_file", { relativePath: patchedPath })
@@ -533,10 +519,6 @@ function App() {
             break;
           }
           case "patch_apply_error":
-            setAiResponse((prev) =>
-              prev +
-                `\n  ✗ Patch error ${(ev.payload as { path: string }).path}: ${(ev.payload as { message: string }).message}`
-            );
             break;
           case "patch_applied": {
             const p = ev.payload as { path: string; before: string; after: string };

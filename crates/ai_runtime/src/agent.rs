@@ -35,8 +35,8 @@ const MCP_CONTEXT_MAX_CHARS: usize = 6000;
 const MAX_TOOL_CALLS_PER_MESSAGE: usize = 8;
 /// Максимум токенов за сессию (приблизительно: ~4 символа на токен).
 const MAX_TOKENS_PER_SESSION: usize = 32_000;
-/// Максимум времени работы агента (мс).
-const MAX_TIME_MS: u64 = 120_000;
+/// Максимум времени работы агента (мс). 10 мин.
+const MAX_TIME_MS: u64 = 600_000;
 /// Сколько одинаковых ошибок подряд = зацикливание.
 const SAME_ERROR_THRESHOLD: usize = 3;
 

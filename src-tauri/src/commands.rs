@@ -791,7 +791,7 @@ pub async fn ai_agent_request(
             &project_root_clone,
             &message,
             emitter,
-            20,
+            50,
             preferred_for_spawn.as_deref(),
         )
         .await

@@ -50,7 +50,12 @@ impl Default for AppState {
             let deepseek = Arc::new(LocalProvider::new(deepseek_config));
             ai_runtime.add_provider(deepseek.clone());
 
-            vec![gigachat, deepseek]
+            let mut smollm2_config = LocalConfig::default_config();
+            smollm2_config.model_variant = ModelVariant::SmolLM2;
+            let smollm2 = Arc::new(LocalProvider::new(smollm2_config));
+            ai_runtime.add_provider(smollm2.clone());
+
+            vec![gigachat, deepseek, smollm2]
         };
 
         if let (Some(client_id), Some(client_secret)) = (

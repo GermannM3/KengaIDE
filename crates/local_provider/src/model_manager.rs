@@ -163,7 +163,7 @@ impl ModelManager {
             .map_err(|e| LocalProviderError::DownloadFailed(e.to_string()))?;
 
         match self.config.model_variant {
-            ModelVariant::GigaChat | ModelVariant::DeepSeekCoder => {
+            ModelVariant::GigaChat | ModelVariant::DeepSeekCoder | ModelVariant::SmolLM2 => {
                 let url = hf_api_tree_url(hf.repo_id, "");
                 let body: Vec<HfTreeItem> = client
                     .get(&url)
@@ -234,6 +234,7 @@ impl ModelManager {
         let name = match self.config.model_variant {
             ModelVariant::GigaChat => "GigaChat3-10B-A1.8B",
             ModelVariant::DeepSeekCoder => "DeepSeek-Coder-6.7B-Instruct",
+            ModelVariant::SmolLM2 => "SmolLM2-1.7B-Instruct",
             ModelVariant::Full => "GigaChat3-702B-A36B-preview",
         };
         let metadata = serde_json::json!({

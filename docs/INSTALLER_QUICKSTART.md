@@ -27,14 +27,14 @@ npm run tauri:build
 - `target/release/bundle/appimage/KengaIDE_0.1.0_amd64.AppImage`
 - `target/release/bundle/deb/kengaide_0.1.0_amd64.deb`
 
-**CI (GitHub Actions):** `.github/workflows/build-release.yml` — при push в `release` или ручном запуске собирает Windows EXE и Linux AppImage, загружает артефакты и создаёт draft-релиз.
+**CI (GitHub Actions):** workflow `build-release` — при ручном запуске или push в `release` собирает EXE и AppImage. Артефакты — в Actions → последний run → Artifacts. При push в `release` дополнительно создаётся draft-релиз с файлами.
 
 ### Что получит пользователь
 
 1. Скачивает **один файл** (.exe на Windows, .AppImage на Linux)
 2. Запускает → установка
 3. Первый запуск → Welcome-экран:
-   - «Загрузить модель» (GigaChat / DeepSeek) — нужен интернет, ~4–10 ГБ
+   - «Загрузить модель» (GigaChat / DeepSeek / SmolLM2) — нужен интернет, ~1–10 ГБ
    - «Пропустить» — можно добавить OpenAI по API key позже
 4. Готово
 

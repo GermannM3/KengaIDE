@@ -10,6 +10,8 @@ pub enum ModelVariant {
     GigaChat,
     /// DeepSeek-Coder 6.7B Instruct — coding-first, ~4 ГБ.
     DeepSeekCoder,
+    /// SmolLM2-1.7B-Instruct — лёгкая, ~1.2 ГБ, быстрая.
+    SmolLM2,
     /// GigaChat3-702B-A36B — полная модель, ~170+ ГБ.
     Full,
 }
@@ -38,6 +40,12 @@ impl ModelVariant {
                 file_pattern: "deepseek-coder-6.7b-instruct.Q4_K_M.gguf",
                 size_gb: 4.0,
             },
+            ModelVariant::SmolLM2 => HuggingFaceModelConfig {
+                repo_id: "HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF",
+                quant: "q4_k_m",
+                file_pattern: "smollm2-1.7b-instruct-q4_k_m.gguf",
+                size_gb: 1.2,
+            },
             ModelVariant::Full => HuggingFaceModelConfig {
                 repo_id: "bartowski/ai-sage_GigaChat3-702B-A36B-preview-GGUF",
                 quant: "IQ2_XXS",
@@ -51,14 +59,16 @@ impl ModelVariant {
         match self {
             ModelVariant::GigaChat => "gigachat3",
             ModelVariant::DeepSeekCoder => "deepseek-coder",
+            ModelVariant::SmolLM2 => "smollm2",
             ModelVariant::Full => "gigachat3-702b",
         }
     }
 
     pub fn display_name(&self) -> &'static str {
         match self {
-            ModelVariant::GigaChat => "GigaChat3 Ultra Preview",
+            ModelVariant::GigaChat => "GigaChat3 10B",
             ModelVariant::DeepSeekCoder => "DeepSeek-Coder 6.7B",
+            ModelVariant::SmolLM2 => "SmolLM2 1.7B",
             ModelVariant::Full => "GigaChat3 702B",
         }
     }
@@ -67,6 +77,7 @@ impl ModelVariant {
         match self {
             ModelVariant::GigaChat => "local-gigachat",
             ModelVariant::DeepSeekCoder => "local-deepseek",
+            ModelVariant::SmolLM2 => "local-smollm2",
             ModelVariant::Full => "local-gigachat-702b",
         }
     }
@@ -113,6 +124,7 @@ impl LocalConfig {
         let subdir = match self.model_variant {
             ModelVariant::GigaChat => "gigachat3-10b-a18b",
             ModelVariant::DeepSeekCoder => "deepseek-coder-6.7b",
+            ModelVariant::SmolLM2 => "smollm2-1.7b",
             ModelVariant::Full => "gigachat3-702b-a36b",
         };
         self.models_dir.join(subdir)

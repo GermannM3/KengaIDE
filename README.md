@@ -67,9 +67,15 @@ npm run tauri:build
 
 Подробнее: [docs/INSTALLER_QUICKSTART.md](docs/INSTALLER_QUICKSTART.md)
 
+## Локальные модели
+
+- **GigaChat3 10B** — ~10 ГБ, универсальная (RU)
+- **DeepSeek-Coder 6.7B** — ~4 ГБ, для кода
+- **SmolLM2 1.7B** — ~1.2 ГБ, лёгкая и быстрая
+
 ## Текущее состояние
 
-- Backend Core, AI Runtime, Providers — скелет готов
-- LocalProvider, ApiProvider — заглушки (модель не загружена, API не подключён)
-- UI — Monaco + панель AI, вызов `ai_request`
-- Model Manager — заглушка
+- Backend Core, AI Runtime, Providers
+- LocalProvider (GigaChat, DeepSeek, SmolLM2), ApiProvider (OpenAI)
+- UI — Monaco + панель AI, агент с инструментами
+- Model Manager
