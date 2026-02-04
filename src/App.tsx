@@ -849,6 +849,7 @@ function App() {
             alignItems: "center",
             padding: "2px 8px",
             background: "var(--kenga-panel)",
+            color: "var(--kenga-fg)",
             borderBottom: "1px solid var(--kenga-border)",
             fontSize: 13,
             gap: 4,
@@ -1214,6 +1215,7 @@ function App() {
           padding: "8px 16px",
           borderBottom: "1px solid var(--kenga-border)",
           background: "var(--kenga-panel)",
+          color: "var(--kenga-fg)",
           display: "flex",
           alignItems: "center",
           gap: 12,
@@ -2548,21 +2550,24 @@ function App() {
                     justifyContent: "space-between",
                     padding: 12,
                     background: activeProviderId === p.id ? "var(--kenga-accent-bg)" : "var(--kenga-panel)",
-                    border: "1px solid #ddd",
+                    border: "1px solid var(--kenga-border)",
                     borderRadius: 4,
                   }}
                 >
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       const inv = invokeRef.current;
                       if (!inv) return;
                       try {
                         await inv("set_active_provider", { providerId: p.id });
                         setActiveProviderId(p.id);
-                        setAiResponse((prev) => prev + `\nАктивный провайдер: ${p.name}\n`);
-                      } catch {
-                        /* ignore */
+                        setShowSwitchModelModal(false);
+                        loadAiProviders();
+                      } catch (err) {
+                        setAiResponse((prev) => prev + `\nОшибка: ${String(err)}\n`);
                       }
                     }}
                     style={{
@@ -2572,6 +2577,7 @@ function App() {
                       border: "none",
                       cursor: "pointer",
                       padding: 0,
+                      color: "inherit",
                     }}
                   >
                     <span style={{ fontWeight: 600 }}>{p.name}</span>
