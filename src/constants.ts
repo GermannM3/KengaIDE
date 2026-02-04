@@ -21,9 +21,9 @@ export const THEME_MONACO: Record<"light" | "dark" | "high-contrast", string> = 
 
 export const THEME_CSS: Record<
   "light" | "dark" | "high-contrast",
-  { bg: string; fg: string; panel: string; border: string; accent: string }
+  { bg: string; fg: string; panel: string; border: string; accent: string; muted: string; accentBg: string }
 > = {
-  light: { bg: "#ffffff", fg: "#333333", panel: "#f5f5f5", border: "#e0e0e0", accent: "#1e88e5" },
-  dark: { bg: "#1e1e1e", fg: "#d4d4d4", panel: "#252526", border: "#3c3c3c", accent: "#0e639c" },
-  "high-contrast": { bg: "#000000", fg: "#ffffff", panel: "#1a1a1a", border: "#ffffff", accent: "#ffff00" },
+  light: { bg: "#ffffff", fg: "#333333", panel: "#f5f5f5", border: "#e0e0e0", accent: "#1e88e5", muted: "#666666", accentBg: "#e3f2fd" },
+  dark: { bg: "#1e1e1e", fg: "#d4d4d4", panel: "#252526", border: "#3c3c3c", accent: "#0e639c", muted: "#a0a0a0", accentBg: "rgba(14,99,156,0.35)" },
+  "high-contrast": { bg: "#000000", fg: "#ffffff", panel: "#1a1a1a", border: "#ffffff", accent: "#ffff00", muted: "#cccccc", accentBg: "rgba(255,255,0,0.2)" },
 };

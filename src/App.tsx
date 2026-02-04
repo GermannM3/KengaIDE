@@ -184,6 +184,8 @@ function App() {
     document.documentElement.style.setProperty("--kenga-panel", css.panel);
     document.documentElement.style.setProperty("--kenga-border", css.border);
     document.documentElement.style.setProperty("--kenga-accent", css.accent);
+    document.documentElement.style.setProperty("--kenga-muted", css.muted);
+    document.documentElement.style.setProperty("--kenga-accent-bg", css.accentBg);
   }, [theme]);
 
   useEffect(() => {
@@ -558,6 +560,7 @@ function App() {
       await inv("start_model_download");
       setShowDownloadDialog(false);
       refreshStatus();
+      loadAiProviders();
     } catch (e) {
       setDownloadError(String(e));
     } finally {
@@ -785,7 +788,7 @@ function App() {
       ? Math.round((downloadProgress.bytes_done / downloadProgress.bytes_total) * 100)
       : 0;
 
-  const [menuOpen, setMenuOpen] = useState<"file" | "edit" | "view" | "ai" | "tools" | "help" | null>(null);
+  const [menuOpen, setMenuOpen] = useState<"file" | "view" | "ai" | "tools" | "help" | null>(null);
   const [showSaveAsModal, setShowSaveAsModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [saveAsPath, setSaveAsPath] = useState("");
@@ -858,7 +861,7 @@ function App() {
               style={{
                 padding: "4px 10px",
                 border: "none",
-                background: menuOpen === "file" ? "#e0e0e0" : "transparent",
+                background: menuOpen === "file" ? "var(--kenga-panel)" : "transparent",
                 cursor: "pointer",
                 borderRadius: 4,
               }}
@@ -919,7 +922,7 @@ function App() {
                 >
                   Открыть папку
                 </button>
-                <div style={{ borderTop: "1px solid #eee", margin: "2px 0" }} />
+                <div style={{ borderTop: "1px solid var(--kenga-border)", margin: "2px 0" }} />
                 <button
                   type="button"
                   onClick={() => {
@@ -965,60 +968,11 @@ function App() {
           <div style={{ position: "relative" }}>
             <button
               type="button"
-              onClick={() => setMenuOpen((prev) => (prev === "edit" ? null : "edit"))}
-              style={{
-                padding: "4px 10px",
-                border: "none",
-                background: menuOpen === "edit" ? "#e0e0e0" : "transparent",
-                cursor: "pointer",
-                borderRadius: 4,
-              }}
-            >
-              Правка
-            </button>
-            {menuOpen === "edit" && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  marginTop: 0,
-                  background: "var(--kenga-bg)",
-                  border: "1px solid var(--kenga-border)",
-                  borderRadius: 4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  minWidth: 180,
-                  zIndex: 2000,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen(null)}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "8px 12px",
-                    textAlign: "left",
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "#999",
-                  }}
-                >
-                  Command Palette (Ctrl+Shift+P)
-                </button>
-              </div>
-            )}
-          </div>
-          <div style={{ position: "relative" }}>
-            <button
-              type="button"
               onClick={() => setMenuOpen((prev) => (prev === "view" ? null : "view"))}
               style={{
                 padding: "4px 10px",
                 border: "none",
-                background: menuOpen === "view" ? "#e0e0e0" : "transparent",
+                background: menuOpen === "view" ? "var(--kenga-panel)" : "transparent",
                 cursor: "pointer",
                 borderRadius: 4,
               }}
@@ -1047,17 +1001,17 @@ function App() {
                   Split Editor
                 </button>
                 <button type="button" onClick={() => { setMenuOpen(null); setShowCommandPalette(true); setCommandPaletteQuery(""); setCommandPaletteSelected(0); setTimeout(() => commandPaletteInputRef.current?.focus(), 50); }} style={{ display: "block", width: "100%", padding: "8px 12px", textAlign: "left", border: "none", background: "transparent", cursor: "pointer", fontSize: 13 }}>
-                  Command Palette (Ctrl+Shift+P)
+                  Command Palette
                 </button>
-                <div style={{ borderTop: "1px solid #eee", margin: "2px 0" }} />
-                <div style={{ padding: "4px 12px", fontSize: 11, color: "#666" }}>Тема</div>
-                <button type="button" onClick={() => { setMenuOpen(null); setTheme("light"); }} style={{ display: "block", width: "100%", padding: "6px 12px 6px 24px", textAlign: "left", border: "none", background: theme === "light" ? "rgba(30,136,229,0.15)" : "transparent", cursor: "pointer", fontSize: 13 }}>
+                <div style={{ borderTop: "1px solid var(--kenga-border)", margin: "2px 0" }} />
+                <div style={{ padding: "4px 12px", fontSize: 11, color: "var(--kenga-muted)" }}>Тема</div>
+                <button type="button" onClick={() => { setMenuOpen(null); setTheme("light"); }} style={{ display: "block", width: "100%", padding: "6px 12px 6px 24px", textAlign: "left", border: "none", background: theme === "light" ? "var(--kenga-accent-bg)" : "transparent", cursor: "pointer", fontSize: 13 }}>
                   {theme === "light" ? "● " : ""}Светлая
                 </button>
-                <button type="button" onClick={() => { setMenuOpen(null); setTheme("dark"); }} style={{ display: "block", width: "100%", padding: "6px 12px 6px 24px", textAlign: "left", border: "none", background: theme === "dark" ? "rgba(30,136,229,0.15)" : "transparent", cursor: "pointer", fontSize: 13 }}>
+                <button type="button" onClick={() => { setMenuOpen(null); setTheme("dark"); }} style={{ display: "block", width: "100%", padding: "6px 12px 6px 24px", textAlign: "left", border: "none", background: theme === "dark" ? "var(--kenga-accent-bg)" : "transparent", cursor: "pointer", fontSize: 13 }}>
                   {theme === "dark" ? "● " : ""}Тёмная
                 </button>
-                <button type="button" onClick={() => { setMenuOpen(null); setTheme("high-contrast"); }} style={{ display: "block", width: "100%", padding: "6px 12px 6px 24px", textAlign: "left", border: "none", background: theme === "high-contrast" ? "rgba(30,136,229,0.15)" : "transparent", cursor: "pointer", fontSize: 13 }}>
+                <button type="button" onClick={() => { setMenuOpen(null); setTheme("high-contrast"); }} style={{ display: "block", width: "100%", padding: "6px 12px 6px 24px", textAlign: "left", border: "none", background: theme === "high-contrast" ? "var(--kenga-accent-bg)" : "transparent", cursor: "pointer", fontSize: 13 }}>
                   {theme === "high-contrast" ? "● " : ""}Высокий контраст
                 </button>
               </div>
@@ -1070,7 +1024,7 @@ function App() {
               style={{
                 padding: "4px 10px",
                 border: "none",
-                background: menuOpen === "ai" ? "#e0e0e0" : "transparent",
+                background: menuOpen === "ai" ? "var(--kenga-panel)" : "transparent",
                 cursor: "pointer",
                 borderRadius: 4,
               }}
@@ -1098,7 +1052,7 @@ function App() {
                 <button type="button" onClick={() => { setMenuOpen(null); if (agentRequestId) invokeRef.current?.("ai_cancel", { requestId: agentRequestId }); }} disabled={!agentRequestId} style={{ display: "block", width: "100%", padding: "8px 12px", textAlign: "left", border: "none", background: "transparent", cursor: agentRequestId ? "pointer" : "not-allowed", fontSize: 13, opacity: agentRequestId ? 1 : 0.5 }}>
                   Остановить агента
                 </button>
-                <div style={{ borderTop: "1px solid #eee", margin: "2px 0" }} />
+                <div style={{ borderTop: "1px solid var(--kenga-border)", margin: "2px 0" }} />
                 <button type="button" onClick={() => { setMenuOpen(null); setShowSwitchModelModal(true); loadAiProviders(); }} style={{ display: "block", width: "100%", padding: "8px 12px", textAlign: "left", border: "none", background: "transparent", cursor: "pointer", fontSize: 13 }}>
                   Выбор модели
                 </button>
@@ -1118,7 +1072,7 @@ function App() {
               style={{
                 padding: "4px 10px",
                 border: "none",
-                background: menuOpen === "tools" ? "#e0e0e0" : "transparent",
+                background: menuOpen === "tools" ? "var(--kenga-panel)" : "transparent",
                 cursor: "pointer",
                 borderRadius: 4,
               }}
@@ -1153,7 +1107,7 @@ function App() {
               style={{
                 padding: "4px 10px",
                 border: "none",
-                background: menuOpen === "help" ? "#e0e0e0" : "transparent",
+                background: menuOpen === "help" ? "var(--kenga-panel)" : "transparent",
                 cursor: "pointer",
                 borderRadius: 4,
               }}
@@ -1181,7 +1135,7 @@ function App() {
                 <button type="button" onClick={() => { setMenuOpen(null); invokeRef.current?.("open_audit_folder").catch(() => {}); }} style={{ display: "block", width: "100%", padding: "8px 12px", textAlign: "left", border: "none", background: "transparent", cursor: "pointer", fontSize: 13 }}>
                   Папка аудита
                 </button>
-                <div style={{ borderTop: "1px solid #eee", margin: "2px 0" }} />
+                <div style={{ borderTop: "1px solid var(--kenga-border)", margin: "2px 0" }} />
                 <button type="button" onClick={() => { setMenuOpen(null); setShowAboutModal(true); }} style={{ display: "block", width: "100%", padding: "8px 12px", textAlign: "left", border: "none", background: "transparent", cursor: "pointer", fontSize: 13 }}>
                   О программе
                 </button>
@@ -1205,7 +1159,7 @@ function App() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--kenga-bg)",
               padding: 20,
               borderRadius: 8,
               minWidth: 400,
@@ -1292,7 +1246,7 @@ function App() {
               style={{
                 fontSize: 12,
                 padding: "4px 10px",
-                background: splitActive ? "#e3f2fd" : "transparent",
+                background: splitActive ? "var(--kenga-accent-bg)" : "transparent",
               }}
               title="Разделить вид (Ctrl+клик по файлу — открыть во втором)"
             >
@@ -1321,7 +1275,7 @@ function App() {
           <span
             style={{
               fontSize: 11,
-              color: "#555",
+              color: "var(--kenga-muted)",
               maxWidth: 280,
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -1357,13 +1311,10 @@ function App() {
             >
               + API
             </button>
-            <span style={{ fontSize: 10, color: "#999" }} title="Command Palette">
-              Ctrl+Shift+P
-            </span>
           </>
         )}
         {tauriReady && !inTauri && (
-          <span style={{ fontSize: 11, color: "#888" }}>
+          <span style={{ fontSize: 11, color: "var(--kenga-muted)" }}>
             Запустите приложение KengaIDE
           </span>
         )}
@@ -1371,7 +1322,7 @@ function App() {
           <span
             style={{
               fontSize: 11,
-              background: modelSelection ? "#e3f2fd" : "#e8f5e9",
+              background: modelSelection ? "var(--kenga-accent-bg)" : "var(--kenga-panel)",
               padding: "2px 8px",
               borderRadius: 4,
             }}
@@ -1385,12 +1336,12 @@ function App() {
           </span>
         )}
         {downloading && (
-          <span style={{ fontSize: 11, color: "#666" }}>
+          <span style={{ fontSize: 11, color: "var(--kenga-muted)" }}>
             Downloading… {progressPct}%
           </span>
         )}
         {modelStatus === "not_loaded" && !downloading && !showDownloadDialog && (
-          <span style={{ fontSize: 11, color: "#666" }}>
+          <span style={{ fontSize: 11, color: "var(--kenga-muted)" }}>
             Local model: not loaded
           </span>
         )}
@@ -1424,7 +1375,7 @@ function App() {
               Продолжить?
             </p>
             {downloading && (
-              <p style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>
+              <p style={{ fontSize: 13, color: "var(--kenga-muted)", marginBottom: 12 }}>
                 {downloadProgress && downloadProgress.bytes_total > 0
                   ? `Загрузка… ${progressPct}%`
                   : "Загрузка началась…"}
@@ -1467,13 +1418,13 @@ function App() {
                 background: "var(--kenga-panel)",
               }}
             >
-              <div style={{ padding: "8px 10px", borderBottom: "1px solid #eee", fontSize: 12, fontWeight: 600 }}>
+              <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--kenga-border)", fontSize: 12, fontWeight: 600 }}>
                 Файлы
               </div>
               <div style={{ flex: 1, overflow: "auto", padding: "6px 0" }}>
-                {projectTreeLoading && <div style={{ padding: 8, fontSize: 11, color: "#666" }}>Загрузка…</div>}
+                {projectTreeLoading && <div style={{ padding: 8, fontSize: 11, color: "var(--kenga-muted)" }}>Загрузка…</div>}
                 {!projectTreeLoading && projectTree && projectTree.length === 0 && (
-                  <div style={{ padding: 8, fontSize: 11, color: "#666" }}>Папка пуста</div>
+                  <div style={{ padding: 8, fontSize: 11, color: "var(--kenga-muted)" }}>Папка пуста</div>
                 )}
                 {!projectTreeLoading && projectTree && projectTree.length > 0 && (
                   <FileTreeList
@@ -1520,7 +1471,7 @@ function App() {
               }}
             >
               <h2 style={{ margin: "0 0 8px 0", fontSize: 20, color: "var(--kenga-fg, #333)" }}>Добро пожаловать в KengaIDE</h2>
-              <p style={{ margin: "0 0 24px 0", fontSize: 14, color: "#666" }}>Что хотите сделать?</p>
+              <p style={{ margin: "0 0 24px 0", fontSize: 14, color: "var(--kenga-muted)" }}>Что хотите сделать?</p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
                 <button
                   type="button"
@@ -1560,7 +1511,7 @@ function App() {
                       display: "flex",
                       alignItems: "center",
                       padding: "4px 8px 4px 12px",
-                      background: isActive ? "#fff" : "transparent",
+                      background: isActive ? "var(--kenga-bg)" : "transparent",
                       borderRight: "1px solid #ddd",
                       cursor: "pointer",
                       maxWidth: 180,
@@ -1648,7 +1599,7 @@ function App() {
                       style={{
                         padding: "4px 8px",
                         fontSize: 11,
-                        color: "#555",
+                        color: "var(--kenga-muted)",
                         background: "#f0f0f0",
                         borderBottom: "1px solid #ddd",
                       }}
@@ -1728,7 +1679,7 @@ function App() {
                 type="button"
                 onClick={() => handleAgentRequest()}
                 disabled={!!streamingRequestId || !!agentRequestId || !projectPath}
-                style={{ padding: "4px 10px", fontSize: 11, background: projectPath && !agentRequestId ? "var(--kenga-accent, #1565c0)" : "#9e9e9e", color: "#fff", border: "none", borderRadius: 4, cursor: projectPath ? "pointer" : "not-allowed" }}
+                style={{ padding: "4px 10px", fontSize: 11, background: projectPath && !agentRequestId ? "var(--kenga-accent)" : "var(--kenga-muted)", color: "#fff", border: "none", borderRadius: 4, cursor: projectPath ? "pointer" : "not-allowed" }}
                 title="Запустить агента"
               >
                 ▶ Run
@@ -1737,7 +1688,7 @@ function App() {
                 type="button"
                 onClick={() => { if (agentRequestId) invokeRef.current?.("ai_cancel", { requestId: agentRequestId }); if (streamingRequestId) handleStopGeneration(); }}
                 disabled={!agentRequestId && !streamingRequestId}
-                style={{ padding: "4px 10px", fontSize: 11, background: agentRequestId || streamingRequestId ? "#c62828" : "#9e9e9e", color: "#fff", border: "none", borderRadius: 4, cursor: agentRequestId || streamingRequestId ? "pointer" : "not-allowed" }}
+                style={{ padding: "4px 10px", fontSize: 11, background: agentRequestId || streamingRequestId ? "#c62828" : "var(--kenga-muted)", color: "#fff", border: "none", borderRadius: 4, cursor: agentRequestId || streamingRequestId ? "pointer" : "not-allowed" }}
                 title="Остановить"
               >
                 ⏹ Stop
@@ -1820,8 +1771,8 @@ function App() {
                       )}
                       {t.kind === "tool_call" && (
                         <>
-                          <span style={{ color: "#1565c0", flexShrink: 0 }}>🛠</span>
-                          <span style={{ color: "#1565c0" }}>
+                          <span style={{ color: "var(--kenga-accent)", flexShrink: 0 }}>🛠</span>
+                          <span style={{ color: "var(--kenga-accent)" }}>
                             {t.name}
                             {t.path && (
                               <button
@@ -1831,7 +1782,7 @@ function App() {
                                   marginLeft: 4,
                                   padding: "0 4px",
                                   fontSize: 10,
-                                  background: "rgba(21,101,192,0.15)",
+                                  background: "var(--kenga-accent-bg)",
                                   border: "none",
                                   borderRadius: 2,
                                   cursor: "pointer",
@@ -1890,7 +1841,7 @@ function App() {
                       {t.kind === "done" && (
                         <>
                           <span style={{ color: "#2e7d32", flexShrink: 0 }}>✅</span>
-                          <span style={{ color: "#666", fontSize: 11 }}>{t.message?.slice(0, 80)}{(t.message?.length ?? 0) > 80 ? "…" : ""}</span>
+                          <span style={{ color: "var(--kenga-muted)", fontSize: 11 }}>{t.message?.slice(0, 80)}{(t.message?.length ?? 0) > 80 ? "…" : ""}</span>
                         </>
                       )}
                     </div>
@@ -1904,7 +1855,7 @@ function App() {
               <div
                 style={{
                   height: 8,
-                  background: "#eee",
+                  background: "var(--kenga-panel)",
                   borderRadius: 4,
                   overflow: "hidden",
                 }}
@@ -1959,7 +1910,7 @@ function App() {
             <button
               onClick={() => handleAgentRequest()}
               disabled={!!streamingRequestId || !!agentRequestId || !projectPath}
-              style={{ background: projectPath ? "#1565c0" : "#9e9e9e", color: "#fff" }}
+              style={{ background: projectPath ? "var(--kenga-accent)" : "var(--kenga-muted)", color: "#fff" }}
               title={projectPath ? "План → инструменты (create_file, read_file, …) → проверка." : "Сначала откройте папку проекта (кнопка в шапке)."}
             >
               Agent
@@ -1984,14 +1935,14 @@ function App() {
             </button>
           )}
           {streamingRequestId && (
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "var(--kenga-muted)", marginBottom: 8 }}>
               Генерация…
             </div>
           )}
           <pre
             ref={responseEndRef}
             style={{
-              background: "#f5f5f5",
+              background: "var(--kenga-panel)",
               padding: 12,
               fontSize: 12,
               overflow: "auto",
@@ -2048,7 +1999,7 @@ function App() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--kenga-bg)",
               padding: 20,
               borderRadius: 8,
               minWidth: 360,
@@ -2058,8 +2009,10 @@ function App() {
           >
             <h3 style={{ margin: "0 0 16px 0", fontSize: 16 }}>Новый проект</h3>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: "block", fontSize: 12, marginBottom: 4 }}>Шаблон</label>
+              <label htmlFor="create-template" style={{ display: "block", fontSize: 12, marginBottom: 4 }}>Шаблон</label>
               <select
+                id="create-template"
+                aria-label="Шаблон для нового проекта"
                 value={createTemplate}
                 onChange={(e) => setCreateTemplate(e.target.value)}
                 style={{ width: "100%", padding: 8 }}
@@ -2102,7 +2055,7 @@ function App() {
               <button type="button" onClick={() => setShowCreateModal(false)}>
                 Отмена
               </button>
-              <button type="button" onClick={handleCreateProject} style={{ background: "#1565c0", color: "#fff" }}>
+              <button type="button" onClick={handleCreateProject} style={{ background: "var(--kenga-accent)", color: "#fff" }}>
                 Создать
               </button>
             </div>
@@ -2126,7 +2079,7 @@ function App() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--kenga-bg)",
               borderRadius: 8,
               boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
               minWidth: 480,
@@ -2156,20 +2109,20 @@ function App() {
                   if (cmd) runCommand(cmd.id);
                 }
               }}
-              placeholder="Введите команду (Ctrl+Shift+P)"
+              placeholder="Введите команду..."
               style={{
                 width: "100%",
                 padding: "12px 16px",
                 fontSize: 14,
                 border: "none",
-                borderBottom: "1px solid #eee",
+                borderBottom: "1px solid var(--kenga-border)",
                 outline: "none",
                 boxSizing: "border-box",
               }}
             />
             <div style={{ maxHeight: 280, overflow: "auto" }}>
               {filteredCommands.length === 0 ? (
-                <div style={{ padding: 16, color: "#888", fontSize: 13 }}>Нет совпадений</div>
+                <div style={{ padding: 16, color: "var(--kenga-muted)", fontSize: 13 }}>Нет совпадений</div>
               ) : (
                 filteredCommands.map((cmd, i) => (
                   <div
@@ -2182,7 +2135,7 @@ function App() {
                       padding: "10px 16px",
                       fontSize: 13,
                       cursor: "pointer",
-                      background: i === commandPaletteSelected ? "#e3f2fd" : "transparent",
+                      background: i === commandPaletteSelected ? "var(--kenga-accent-bg)" : "transparent",
                     }}
                   >
                     {cmd.label}
@@ -2229,8 +2182,8 @@ function App() {
               style={{
                 padding: "12px 24px",
                 fontSize: 14,
-                background: "#fff",
-                color: "#1565c0",
+                background: "var(--kenga-bg)",
+                color: "var(--kenga-accent)",
                 border: "none",
                 borderRadius: 8,
                 cursor: "pointer",
@@ -2317,8 +2270,8 @@ function App() {
                     style={{
                       padding: "8px 16px",
                       fontSize: 13,
-                      background: "#fff",
-                      color: "#1565c0",
+                      background: "var(--kenga-bg)",
+                      color: "var(--kenga-accent)",
                       border: "none",
                       borderRadius: 6,
                       cursor: downloading ? "not-allowed" : "pointer",
@@ -2349,7 +2302,7 @@ function App() {
                   style={{
                     height: "100%",
                     width: `${progressPct}%`,
-                    background: "#fff",
+                    background: "var(--kenga-bg)",
                     transition: "width 0.2s",
                   }}
                 />
@@ -2442,7 +2395,7 @@ function App() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--kenga-bg)",
               padding: 20,
               borderRadius: 8,
               minWidth: 400,
@@ -2451,7 +2404,7 @@ function App() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>Запустить агента</h3>
-            <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "#666" }}>
+            <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "var(--kenga-muted)" }}>
               Введите задачу для агента (создать файл, рефакторинг, исправить ошибки и т.п.)
             </p>
             <input
@@ -2481,7 +2434,7 @@ function App() {
                   setShowAgentPrompt(false);
                 }}
                 disabled={!agentPromptInput.trim() || !projectPath}
-                style={{ background: "#1565c0", color: "#fff" }}
+                style={{ background: "var(--kenga-accent)", color: "#fff" }}
               >
                 Запустить
               </button>
@@ -2505,7 +2458,7 @@ function App() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--kenga-bg)",
               padding: 20,
               borderRadius: 8,
               minWidth: 400,
@@ -2514,7 +2467,7 @@ function App() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>Добавить OpenAI провайдер</h3>
-            <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "#666" }}>
+            <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "var(--kenga-muted)" }}>
               Введите API key от OpenAI (sk-...). Ключ сохраняется в ~/.kengaide/ai_config.json
             </p>
             <input
@@ -2550,7 +2503,7 @@ function App() {
                   }
                 }}
                 disabled={!addProviderApiKey.trim()}
-                style={{ background: "#1565c0", color: "#fff" }}
+                style={{ background: "var(--kenga-accent)", color: "#fff" }}
               >
                 Добавить
               </button>
@@ -2574,7 +2527,7 @@ function App() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--kenga-bg)",
               padding: 20,
               borderRadius: 8,
               minWidth: 360,
@@ -2594,7 +2547,7 @@ function App() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: 12,
-                    background: activeProviderId === p.id ? "#e3f2fd" : "#f5f5f5",
+                    background: activeProviderId === p.id ? "var(--kenga-accent-bg)" : "var(--kenga-panel)",
                     border: "1px solid #ddd",
                     borderRadius: 4,
                   }}
@@ -2622,7 +2575,7 @@ function App() {
                     }}
                   >
                     <span style={{ fontWeight: 600 }}>{p.name}</span>
-                    <span style={{ fontSize: 11, color: "#666", marginLeft: 8 }}>
+                    <span style={{ fontSize: 11, color: "var(--kenga-muted)", marginLeft: 8 }}>
                       {p.available ? "✓" : "—"}
                     </span>
                   </button>
@@ -2683,7 +2636,7 @@ function App() {
             <p style={{ margin: 0, fontSize: 13, color: "var(--kenga-fg, #333)" }}>
               {appVersion ? `Версия ${appVersion.version}` : "IDE с AI-ассистентом"}
             </p>
-            <p style={{ margin: "12px 0 0 0", fontSize: 12, color: "#666" }}>
+            <p style={{ margin: "12px 0 0 0", fontSize: 12, color: "var(--kenga-muted)" }}>
               Tauri + React + Monaco + локальные и API-модели
             </p>
             <button type="button" onClick={() => setShowAboutModal(false)} style={{ marginTop: 16, padding: "8px 16px" }}>

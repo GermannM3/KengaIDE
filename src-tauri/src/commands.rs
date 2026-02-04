@@ -723,6 +723,12 @@ pub async fn start_model_download_provider(
             })
             .await
             .map_err(|e| e.to_string())?;
+        let mut guard = state.ai_runtime.write().await;
+        guard.set_preferred_provider(Some(provider_id.clone()));
+        drop(guard);
+        let mut config = load_config();
+        config.active_provider_id = Some(provider_id);
+        save_config(&config).map_err(|e| e.to_string())?;
     }
     #[cfg(not(feature = "local"))]
     let _ = (app, state, provider_id);
@@ -892,12 +898,19 @@ pub async fn start_model_download(
     #[cfg(feature = "local")]
     {
         if let Some(ref p) = state.local_providers.first() {
+            let provider_id = p.id().to_string();
             let app = app.clone();
             p.ensure_model(move |progress| {
                 let _ = app.emit("model_download_progress", &progress);
             })
             .await
             .map_err(|e| e.to_string())?;
+            let mut guard = state.ai_runtime.write().await;
+            guard.set_preferred_provider(Some(provider_id.clone()));
+            drop(guard);
+            let mut config = load_config();
+            config.active_provider_id = Some(provider_id);
+            save_config(&config).map_err(|e| e.to_string())?;
         }
     }
     #[cfg(not(feature = "local"))]
