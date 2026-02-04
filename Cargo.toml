@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/agent_tools",
+    "crates/backend_core",
+    "crates/context_manager",
+    "crates/model_manager",
+    "crates/ai_providers",
+    "crates/gigachat_provider",
+    "crates/local_provider",
+    "crates/mcp_provider",
+    "crates/ai_runtime",
+    "src-tauri",
+]

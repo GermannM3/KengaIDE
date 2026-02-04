@@ -1,0 +1,24 @@
+[package]
+name = "ai_runtime"
+version = "0.1.0"
+edition = "2021"
+description = "AI Runtime: провайдеры, контекст, режимы (chat/explain/refactor/generate)"
+
+[dependencies]
+chrono = "0.4"
+dirs = "5"
+agent_tools = { path = "../agent_tools" }
+ai_providers = { path = "../ai_providers" }
+backend_core = { path = "../backend_core" }
+context_manager = { path = "../context_manager" }
+model_manager = { path = "../model_manager" }
+mcp_provider = { path = "../mcp_provider" }
+walkdir = "2"
+async-trait = "0.1"
+futures-util = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tracing = "0.1"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }

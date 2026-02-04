@@ -1,0 +1,11 @@
+[package]
+name = "model_manager"
+version = "0.1.0"
+edition = "2021"
+description = "Model Manager: загрузка, хранение, версии, CPU/GPU"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+tracing = "0.1"

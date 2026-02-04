@@ -1,0 +1,32 @@
+[package]
+name = "kengaide"
+version = "0.1.0"
+edition = "2021"
+description = "KengaIDE — IDE с AI-рантаймом"
+
+[features]
+default = ["local"]
+local = ["local_provider"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+image = "0.25"
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v4"] }
+dirs = "5"
+rfd = "0.14"
+
+# Workspace crates
+backend_core = { path = "../crates/backend_core" }
+ai_runtime = { path = "../crates/ai_runtime" }
+ai_providers = { path = "../crates/ai_providers" }
+gigachat_provider = { path = "../crates/gigachat_provider" }
+local_provider = { path = "../crates/local_provider", optional = true }
+model_manager = { path = "../crates/model_manager" }

@@ -73,4 +73,3 @@ npm run tauri:build
 - LocalProvider, ApiProvider — заглушки (модель не загружена, API не подключён)
 - UI — Monaco + панель AI, вызов `ai_request`
 - Model Manager — заглушка
-# KengaIDE
