@@ -18,7 +18,7 @@ pub fn run() {
             commands::list_ai_providers,
             commands::get_active_provider,
             commands::set_active_provider,
-            commands::add_openai_provider,
+            commands::add_api_provider,
             commands::pick_folder,
             commands::open_mcp_config_folder,
             commands::open_logs_folder,

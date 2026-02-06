@@ -171,13 +171,27 @@ pub async fn open_logs_folder(state: State<'_, AppState>) -> Result<(), String> 
     Ok(())
 }
 
-/// Открывает папку настроек MCP (~/.kengaide) в проводнике. Создаёт папку, если её нет.
+/// Пример mcp.json для первого запуска.
+const MCP_JSON_EXAMPLE: &str = r#"{
+  "mcpServers": {
+    "example": {
+      "url": "http://localhost:3000/mcp",
+      "headers": {}
+    }
+  }
+}"#;
+
+/// Открывает папку настроек MCP (~/.kengaide) в проводнике. Создаёт папку и mcp.json, если их нет.
 #[tauri::command]
 pub async fn open_mcp_config_folder() -> Result<(), String> {
     let dir = dirs::home_dir()
         .ok_or_else(|| "Не найдена домашняя папка".to_string())
         .map(|h| h.join(".kengaide"))?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let mcp_path = dir.join("mcp.json");
+    if !mcp_path.exists() {
+        std::fs::write(&mcp_path, MCP_JSON_EXAMPLE).map_err(|e| e.to_string())?;
+    }
     let path = dir.to_string_lossy().into_owned();
     tokio::task::spawn_blocking(move || {
         #[cfg(windows)]
@@ -548,19 +562,19 @@ pub async fn get_active_provider(state: State<'_, AppState>) -> Result<Option<St
     Ok(guard.preferred_provider_id().map(String::from))
 }
 
-/// Устанавливает активного провайдера по id.
+/// Аргументы для set_active_provider (поддержка camelCase и snake_case).
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SetActiveProviderPayload {
-    provider_id: Option<String>,
+pub(crate) struct SetActiveProviderArgs {
+    pub provider_id: Option<String>,
 }
 
+/// Устанавливает активного провайдера по id.
 #[tauri::command]
 pub async fn set_active_provider(
     state: State<'_, AppState>,
-    payload: SetActiveProviderPayload,
+    args: SetActiveProviderArgs,
 ) -> Result<(), String> {
-    let provider_id = payload.provider_id;
+    let provider_id = args.provider_id;
     let mut guard = state.ai_runtime.write().await;
     guard.set_preferred_provider(provider_id.clone());
     drop(guard);
@@ -571,31 +585,59 @@ pub async fn set_active_provider(
     Ok(())
 }
 
-/// Добавляет OpenAI провайдера по API key.
+/// Аргументы для add_api_provider.
+#[derive(Debug, Deserialize)]
+pub struct AddApiProviderArgs {
+    pub provider_type: String,
+    pub api_key: String,
+    #[serde(default)]
+    pub base_url: Option<String>,
+}
+
+/// Добавляет API провайдера (OpenAI, Kimi, Mistral, custom).
 #[tauri::command]
-pub async fn add_openai_provider(
+pub async fn add_api_provider(
     state: State<'_, AppState>,
-    api_key: String,
+    args: AddApiProviderArgs,
 ) -> Result<(), String> {
-    let key = api_key.trim();
+    let key = args.api_key.trim();
     if key.is_empty() {
         return Err("API key не может быть пустым".to_string());
     }
+    let provider_type = args.provider_type.to_lowercase();
+    let mut config = load_config();
+    let count = config.providers.iter().filter(|e| e.provider_type == provider_type).count();
+    let id = format!("cloud-{}-{}", provider_type, count);
+
+    let provider = match provider_type.as_str() {
+        "openai" => ApiProvider::openai_with_id(&id, Some(key.to_string())),
+        "kimi" => ApiProvider::kimi_with_id(&id, Some(key.to_string())),
+        "mistral" => ApiProvider::mistral_with_id(&id, Some(key.to_string())),
+        "custom" => {
+            let base = args
+                .base_url
+                .as_ref()
+                .filter(|s| !s.is_empty())
+                .cloned()
+                .ok_or("Для custom укажите base_url".to_string())?;
+            ApiProvider::custom(&id, "Custom API", key.to_string(), base)
+        }
+        _ => return Err(format!("Неизвестный тип: {}. Доступны: openai, kimi, mistral, custom", provider_type)),
+    };
 
     let mut guard = state.ai_runtime.write().await;
-    guard.add_provider(Arc::new(ApiProvider::openai(Some(key.to_string()))));
+    guard.add_provider(Arc::new(provider));
     drop(guard);
 
-    let mut config = load_config();
-    let id = format!("openai-{}", config.providers.len());
     config.providers.push(ProviderEntry {
         id: id.clone(),
-        provider_type: "openai".to_string(),
+        provider_type: provider_type.clone(),
         api_key: Some(key.to_string()),
+        base_url: args.base_url.clone(),
         client_id: None,
         client_secret: None,
     });
-    config.active_provider_id = Some("cloud-openai".to_string());
+    config.active_provider_id = Some(id);
     save_config(&config).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -702,13 +744,20 @@ pub async fn ai_request_stream(
     Ok(result.request_id)
 }
 
+/// Аргументы для start_model_download_provider.
+#[derive(Debug, Deserialize)]
+pub(crate) struct StartModelDownloadArgs {
+    pub provider_id: String,
+}
+
 /// Загружает модель для указанного локального провайдера.
 #[tauri::command]
 pub async fn start_model_download_provider(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
-    provider_id: String,
+    args: StartModelDownloadArgs,
 ) -> Result<(), String> {
+    let provider_id = args.provider_id;
     #[cfg(feature = "local")]
     {
         let provider = state

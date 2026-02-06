@@ -67,18 +67,29 @@ impl Default for AppState {
             }
         }
 
-        ai_runtime.add_provider(Arc::new(ApiProvider::openai(None)));
-
         let ai_config = load_config();
-        let mut added_openai = false;
         for entry in &ai_config.providers {
-            if entry.provider_type == "openai" && !added_openai {
-                if let Some(key) = &entry.api_key {
-                    if !key.is_empty() {
-                        ai_runtime.add_provider(Arc::new(ApiProvider::openai(Some(key.clone()))));
-                        added_openai = true;
-                    }
-                }
+            let provider: Option<Arc<ApiProvider>> = match entry.provider_type.as_str() {
+                "openai" => Some(Arc::new(ApiProvider::openai_with_id(
+                    &entry.id,
+                    entry.api_key.as_ref().filter(|k| !k.is_empty()).cloned(),
+                ))),
+                "kimi" => Some(Arc::new(ApiProvider::kimi_with_id(
+                    &entry.id,
+                    entry.api_key.as_ref().filter(|k| !k.is_empty()).cloned(),
+                ))),
+                "mistral" => Some(Arc::new(ApiProvider::mistral_with_id(
+                    &entry.id,
+                    entry.api_key.as_ref().filter(|k| !k.is_empty()).cloned(),
+                ))),
+                "custom" => entry.api_key.as_ref()
+                    .zip(entry.base_url.as_ref())
+                    .filter(|(k, _)| !k.is_empty())
+                    .map(|(k, b)| Arc::new(ApiProvider::custom(&entry.id, "Custom API", k.clone(), b.clone()))),
+                _ => None,
+            };
+            if let Some(p) = provider {
+                ai_runtime.add_provider(p);
             }
         }
         if let Some(ref id) = ai_config.active_provider_id {

@@ -46,7 +46,7 @@ const AGENT_SYSTEM_PROMPT_BASE: &str = r#"You are an IDE agent. Your goal is to 
 Rules:
 1. Your FIRST response MUST be a tool_call (list_files, read_file, create_file, or apply_patch).
 2. When user asks to create/implement/add/generate — use tools immediately. No explanations, no code in text.
-3. For new projects: create_project(template, name?). Templates: empty, rust, python, node.
+3. For new projects: create_project first, then MUST implement with create_file/apply_patch. Never stop with just skeleton.
 4. For existing files: use ONLY apply_patch. Never overwrite a file wholly.
 5. After each tool result, send the next tool_call until done.
 
@@ -56,7 +56,7 @@ Rules:
 pub fn build_agent_system_prompt(mcp_tools: &[McpToolDescriptor]) -> String {
     let mut s = AGENT_SYSTEM_PROMPT_BASE.to_string();
     s.push_str("You have access to the following tools:\n");
-    s.push_str("- create_project(template: string, name?: string) — create new project from template. template: empty|rust|python|node. Creates project as subfolder. Use ONLY this for new projects, never create Cargo.toml/package.json manually.\n");
+    s.push_str("- create_project(template: string, name?: string) — create skeleton only. After this you MUST use create_file/apply_patch to add the actual implementation. Never stop with just hello world.\n");
     s.push_str("- list_files(path?: string) — list directory contents\n");
     s.push_str("- read_file(path: string) — read file content\n");
     s.push_str("- create_file(path: string, content: string) — create new file (or overwrite only when creating from scratch)\n");
@@ -111,7 +111,7 @@ Rules:
 2. NEVER call the same tool with the same arguments twice. Use the result you already have. After list_files, proceed to read_file or apply_patch; do not list again.
 3. When a user asks to "create", "implement", "add", or "generate":
    - You MUST create or modify files using tools.
-4. For creating a NEW PROJECT from scratch: use ONLY create_project(template, name?). NEVER create Cargo.toml, package.json, requirements.txt etc. manually for a new project. Templates: empty, rust, python, node. If create_project returns "Project already exists at X" — that is SUCCESS; proceed with list_files(X) and read_file to work with the existing project.
+4. For creating a NEW PROJECT: use create_project(template, name?) first. Then you MUST implement the user's request with create_file/apply_patch. create_project creates only a skeleton (hello world). NEVER stop after create_project — always add the real code.
 5. First, create a PLAN.
 6. Then EXECUTE the plan step by step using tools.
 7. After each tool call, reassess the state.
@@ -585,6 +585,19 @@ pub async fn run_agent_loop(
             conversation.push_str("\n\nTool result: ");
             conversation.push_str(if success { "OK. " } else { "ERROR. " });
             conversation.push_str(&output);
+            if success {
+                if call.name == "create_project" {
+                    conversation.push_str("\n\n[System: Project skeleton created. The user asked: \"");
+                    conversation.push_str(user_message.trim());
+                    conversation.push_str("\". You MUST now implement using create_file or apply_patch. Do NOT stop.]");
+                } else if call.name == "list_files" {
+                    conversation.push_str("\n\n[System: You listed files. The user asked: \"");
+                    conversation.push_str(user_message.trim());
+                    conversation.push_str("\". You MUST now read_file the relevant files and then use create_file or apply_patch to implement. Do NOT stop with just listing.]");
+                } else if call.name == "read_file" {
+                    conversation.push_str("\n\n[System: You have the file content. Now use apply_patch to modify it according to the user's request, or create_file for new files. Do NOT stop.]");
+                }
+            }
             conversation.push_str("\n\nAssistant: ");
         } else {
             let looks_like_completion = response.len() < 150

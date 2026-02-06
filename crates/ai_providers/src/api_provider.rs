@@ -10,31 +10,81 @@ use async_trait::async_trait;
 use futures_util::stream;
 
 pub struct ApiProvider {
+    id: String,
     name: String,
     api_key: Option<String>,
+    #[allow(dead_code)]
+    base_url: Option<String>,
 }
 
 impl ApiProvider {
-    pub fn new(name: impl Into<String>, api_key: Option<String>) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        api_key: Option<String>,
+        base_url: Option<String>,
+    ) -> Self {
         Self {
+            id: id.into(),
             name: name.into(),
             api_key,
+            base_url,
         }
     }
 
     pub fn openai(api_key: Option<String>) -> Self {
-        Self::new("OpenAI", api_key)
+        Self::new(
+            "cloud-openai",
+            "OpenAI",
+            api_key,
+            Some("https://api.openai.com/v1".to_string()),
+        )
     }
 
-    pub fn claude(api_key: Option<String>) -> Self {
-        Self::new("Claude", api_key)
+    pub fn openai_with_id(id: impl Into<String>, api_key: Option<String>) -> Self {
+        Self::new(
+            id,
+            "OpenAI",
+            api_key,
+            Some("https://api.openai.com/v1".to_string()),
+        )
+    }
+
+    pub fn kimi(api_key: Option<String>) -> Self {
+        Self::new(
+            "cloud-kimi",
+            "Kimi (Moonshot)",
+            api_key,
+            Some("https://api.moonshot.cn/v1".to_string()),
+        )
+    }
+
+    pub fn kimi_with_id(id: impl Into<String>, api_key: Option<String>) -> Self {
+        Self::new(id, "Kimi (Moonshot)", api_key, Some("https://api.moonshot.cn/v1".to_string()))
+    }
+
+    pub fn mistral(api_key: Option<String>) -> Self {
+        Self::new(
+            "cloud-mistral",
+            "Mistral AI",
+            api_key,
+            Some("https://api.mistral.ai/v1".to_string()),
+        )
+    }
+
+    pub fn mistral_with_id(id: impl Into<String>, api_key: Option<String>) -> Self {
+        Self::new(id, "Mistral AI", api_key, Some("https://api.mistral.ai/v1".to_string()))
+    }
+
+    pub fn custom(id: impl Into<String>, name: impl Into<String>, api_key: String, base_url: String) -> Self {
+        Self::new(id, name, Some(api_key), Some(base_url))
     }
 }
 
 #[async_trait]
 impl AiProvider for ApiProvider {
     fn id(&self) -> &str {
-        "cloud-openai"
+        &self.id
     }
 
     fn name(&self) -> &str {

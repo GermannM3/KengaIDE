@@ -29,49 +29,21 @@ export function FileTreeList({
             {isDir ? (
               <button
                 type="button"
+                className="kenga-file-tree-item"
                 onClick={() => onToggle(node.path)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  width: "100%",
-                  padding: "2px 8px",
-                  border: "none",
-                  background: "transparent",
-                  textAlign: "left",
-                  fontSize: 12,
-                  cursor: "pointer",
-                }}
               >
                 <span style={{ width: 14, display: "inline-block" }}>
                   {isExpanded ? "▼" : "▶"}
                 </span>
-                <span
-                  style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {node.name}
                 </span>
               </button>
             ) : (
               <button
                 type="button"
+                className={`kenga-file-tree-file ${isCurrent ? "kenga-active" : ""}`}
                 onClick={(e) => onFileClick(node.path, e)}
-                style={{
-                  width: "100%",
-                  padding: "2px 8px 2px 22px",
-                  fontSize: 12,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  border: "none",
-                  background: isCurrent ? "rgba(30, 136, 229, 0.15)" : "transparent",
-                  textAlign: "left",
-                  cursor: "pointer",
-                }}
                 title={node.path}
               >
                 {node.name}

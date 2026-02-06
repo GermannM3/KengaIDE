@@ -1,22 +1,689 @@
+/* KengaIDE — VS Code / Cursor inspired design system */
+
 * {
   box-sizing: border-box;
 }
 
-html, body, #root {
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: system-ui, -apple-system, sans-serif;
-  color: var(--kenga-fg, #333333);
-  background: var(--kenga-bg, #ffffff);
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kenga-fg);
+  background: var(--kenga-bg);
 }
 
+/* Design tokens — VS Code workbench inspired */
 :root {
   --kenga-bg: #ffffff;
   --kenga-fg: #333333;
-  --kenga-panel: #f5f5f5;
-  --kenga-border: #e0e0e0;
-  --kenga-accent: #1e88e5;
-  --kenga-muted: #666666;
-  --kenga-accent-bg: #e3f2fd;
+  --kenga-panel: #f3f3f3;
+  --kenga-panel-elevated: #ffffff;
+  --kenga-sidebar-bg: #f3f3f3;
+  --kenga-border: #e5e5e5;
+  --kenga-border-subtle: #e8e8e8;
+  --kenga-accent: #0078d4;
+  --kenga-accent-hover: #106ebe;
+  --kenga-muted: #6e6e6e;
+  --kenga-accent-bg: rgba(0, 120, 212, 0.1);
+  --kenga-tab-active: #ffffff;
+  --kenga-tab-inactive: transparent;
+  --kenga-error: #c62828;
+  --kenga-success: #2e7d32;
+  --kenga-radius-sm: 4px;
+  --kenga-radius: 6px;
+  --kenga-radius-lg: 8px;
+  --kenga-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --kenga-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --kenga-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --kenga-transition: 0.15s ease;
+  --kenga-space: 8px;
+}
+
+/* Root workbench layout */
+.kenga-workbench {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--kenga-bg);
+  color: var(--kenga-fg);
+}
+
+/* Menu bar — VS Code style */
+.kenga-menu-bar {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--kenga-panel);
+  color: var(--kenga-fg);
+  border-bottom: 1px solid var(--kenga-border-subtle);
+  font-size: 13px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.kenga-menu-bar .kenga-menu-trigger {
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--kenga-radius-sm);
+  color: var(--kenga-fg);
+  font-size: 13px;
+}
+
+.kenga-menu-bar .kenga-menu-trigger:hover {
+  background: var(--kenga-border-subtle);
+}
+
+.kenga-menu-bar .kenga-menu-trigger.kenga-active {
+  background: var(--kenga-panel-elevated);
+}
+
+/* Main content area */
+.kenga-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Sidebar */
+.kenga-sidebar {
+  background: var(--kenga-sidebar-bg);
+  border-right: 1px solid var(--kenga-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kenga-sidebar .kenga-sidebar-title {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--kenga-muted);
+  border-bottom: 1px solid var(--kenga-border-subtle);
+  background: var(--kenga-panel-elevated);
+}
+
+.kenga-sidebar .kenga-sidebar-body {
+  flex: 1;
+  overflow: auto;
+  padding: 6px 0;
+}
+
+.kenga-sidebar .kenga-sidebar-empty {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--kenga-muted);
+}
+
+/* File tree */
+.kenga-file-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--kenga-fg);
+}
+
+.kenga-file-tree-item:hover {
+  background: var(--kenga-border-subtle);
+}
+
+.kenga-file-tree-item.kenga-active {
+  background: var(--kenga-accent-bg);
+}
+
+.kenga-file-tree-file {
+  width: 100%;
+  padding: 2px 8px 2px 22px;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kenga-file-tree-file:hover {
+  background: var(--kenga-border-subtle);
+}
+
+.kenga-file-tree-file.kenga-active {
+  background: var(--kenga-accent-bg);
+}
+
+/* Resizer */
+.kenga-resizer {
+  width: 4px;
+  min-width: 4px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: var(--kenga-border-subtle);
+  border-left: 1px solid var(--kenga-border-subtle);
+  border-right: 1px solid var(--kenga-border-subtle);
+  transition: background var(--kenga-transition);
+}
+
+.kenga-resizer:hover,
+.kenga-resizer.kenga-dragging {
+  background: var(--kenga-accent);
+}
+
+/* Editor area */
+.kenga-editor-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--kenga-bg);
+}
+
+/* Tabs — VS Code style */
+.kenga-tabs {
+  display: flex;
+  align-items: center;
+  background: var(--kenga-panel);
+  border-bottom: 1px solid var(--kenga-border);
+  min-height: 35px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.kenga-tab {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px 6px 14px;
+  background: var(--kenga-tab-inactive);
+  border-right: 1px solid var(--kenga-border-subtle);
+  cursor: pointer;
+  max-width: 200px;
+  min-width: 80px;
+  transition: background var(--kenga-transition);
+}
+
+.kenga-tab:hover {
+  background: var(--kenga-border-subtle);
+}
+
+.kenga-tab.kenga-active {
+  background: var(--kenga-tab-active);
+  border-bottom: 1px solid var(--kenga-tab-active);
+  margin-bottom: -1px;
+}
+
+.kenga-tab-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.kenga-tab-close {
+  margin-left: 6px;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--kenga-muted);
+  border-radius: var(--kenga-radius-sm);
+}
+
+.kenga-tab-close:hover {
+  color: var(--kenga-fg);
+  background: var(--kenga-border-subtle);
+}
+
+/* Welcome / empty state */
+.kenga-welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--kenga-bg);
+  padding: 48px 32px;
+}
+
+.kenga-welcome h2 {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--kenga-fg);
+}
+
+.kenga-welcome p {
+  margin: 0 0 28px 0;
+  font-size: 15px;
+  color: var(--kenga-muted);
+}
+
+.kenga-welcome-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Split editor */
+.kenga-split-divider {
+  width: 4px;
+  background: var(--kenga-border);
+  cursor: col-resize;
+  flex-shrink: 0;
+}
+
+.kenga-split-header {
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--kenga-muted);
+  background: var(--kenga-panel);
+  border-bottom: 1px solid var(--kenga-border);
+}
+
+/* AI panel */
+.kenga-ai-panel {
+  background: var(--kenga-panel-elevated);
+  border-left: 1px solid var(--kenga-border);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.04);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kenga-ai-panel-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--kenga-fg);
+  flex-shrink: 0;
+}
+
+.kenga-ai-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--kenga-border-subtle);
+  flex-shrink: 0;
+}
+
+.kenga-ai-btn-run {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--kenga-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--kenga-radius-sm);
+  cursor: pointer;
+}
+
+.kenga-ai-btn-run:hover:not(:disabled) {
+  background: var(--kenga-accent-hover);
+}
+
+.kenga-ai-btn-run:disabled {
+  background: var(--kenga-muted);
+  cursor: not-allowed;
+}
+
+.kenga-ai-btn-stop {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--kenga-error);
+  color: #fff;
+  border: none;
+  border-radius: var(--kenga-radius-sm);
+  cursor: pointer;
+}
+
+.kenga-ai-btn-stop:disabled {
+  background: var(--kenga-muted);
+  cursor: not-allowed;
+}
+
+.kenga-ai-btn-secondary {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--kenga-fg);
+  border: 1px solid var(--kenga-border);
+  border-radius: var(--kenga-radius-sm);
+  cursor: pointer;
+}
+
+.kenga-ai-btn-secondary:hover {
+  background: var(--kenga-accent-bg);
+}
+
+.kenga-ai-btn-danger {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--kenga-error);
+  border: none;
+  border-radius: var(--kenga-radius-sm);
+  cursor: pointer;
+}
+
+.kenga-ai-btn-danger:hover {
+  background: rgba(198, 40, 40, 0.1);
+}
+
+/* Tool timeline */
+.kenga-tool-timeline-toggle {
+  width: 100%;
+  padding: 8px 0;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kenga-fg);
+}
+
+.kenga-tool-timeline {
+  max-height: 200px;
+  overflow: auto;
+  background: var(--kenga-panel);
+  border: 1px solid var(--kenga-border-subtle);
+  border-radius: var(--kenga-radius-sm);
+  padding: 10px;
+  font-size: 11px;
+}
+
+.kenga-tool-entry {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.kenga-tool-entry:last-child {
+  margin-bottom: 0;
+}
+
+.kenga-tool-thinking {
+  color: #7e57c2;
+  font-size: 12px;
+}
+
+.kenga-tool-call {
+  color: var(--kenga-accent);
+}
+
+.kenga-tool-result-ok {
+  color: var(--kenga-success);
+}
+
+.kenga-tool-result-err {
+  color: var(--kenga-error);
+}
+
+.kenga-tool-path-btn {
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  background: var(--kenga-accent-bg);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: underline;
+  color: var(--kenga-accent);
+}
+
+/* AI response area */
+.kenga-ai-response {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: var(--kenga-panel);
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: var(--kenga-radius-sm);
+  border: 1px solid var(--kenga-border-subtle);
+}
+
+/* Status bar */
+.kenga-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 12px;
+  min-height: 24px;
+  font-size: 12px;
+  background: var(--kenga-panel);
+  color: var(--kenga-fg);
+  border-top: 1px solid var(--kenga-border);
+  flex-shrink: 0;
+}
+
+.kenga-status-muted {
+  font-size: 11px;
+  color: var(--kenga-muted);
+}
+
+.kenga-status-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--kenga-radius-sm);
+  background: var(--kenga-accent-bg);
+}
+
+/* Header */
+.kenga-header {
+  padding: 8px 16px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--kenga-border);
+  background: var(--kenga-panel);
+  color: var(--kenga-fg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.kenga-header-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.kenga-header-path {
+  font-size: 11px;
+  color: var(--kenga-muted);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Buttons */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  transition: background-color var(--kenga-transition), color var(--kenga-transition);
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+button:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.kenga-btn-bar {
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--kenga-radius-sm);
+  background: transparent;
+  color: var(--kenga-fg);
+  font-size: 13px;
+}
+
+.kenga-btn-bar:hover {
+  background: var(--kenga-border-subtle);
+}
+
+.kenga-btn-bar:active,
+.kenga-btn-bar.kenga-active {
+  background: var(--kenga-accent-bg);
+  color: var(--kenga-accent);
+}
+
+.kenga-btn-primary {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--kenga-radius-sm);
+  background: var(--kenga-accent);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.kenga-btn-primary:hover:not(:disabled) {
+  background: var(--kenga-accent-hover);
+}
+
+.kenga-btn-secondary {
+  padding: 8px 16px;
+  border: 1px solid var(--kenga-border);
+  border-radius: var(--kenga-radius-sm);
+  background: transparent;
+  color: var(--kenga-fg);
+}
+
+.kenga-btn-secondary:hover:not(:disabled) {
+  background: var(--kenga-panel);
+}
+
+/* Menu dropdown */
+.kenga-menu {
+  background: var(--kenga-panel-elevated);
+  border: 1px solid var(--kenga-border);
+  border-radius: var(--kenga-radius);
+  box-shadow: var(--kenga-shadow);
+  padding: 4px 0;
+  min-width: 200px;
+}
+
+.kenga-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--kenga-fg);
+}
+
+.kenga-menu-item:hover {
+  background: var(--kenga-accent-bg);
+}
+
+.kenga-menu-divider {
+  height: 1px;
+  background: var(--kenga-border-subtle);
+  margin: 4px 0;
+}
+
+.kenga-menu-label {
+  padding: 6px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--kenga-muted);
+}
+
+/* Modal */
+.kenga-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  z-index: 3000;
+}
+
+.kenga-modal {
+  background: var(--kenga-panel-elevated);
+  border-radius: var(--kenga-radius-lg);
+  box-shadow: var(--kenga-shadow-lg);
+  padding: 24px;
+  min-width: 320px;
+  max-width: 90vw;
+  border: 1px solid var(--kenga-border);
+}
+
+.kenga-modal-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--kenga-fg);
+}
+
+.kenga-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  border: 1px solid var(--kenga-border);
+  border-radius: var(--kenga-radius-sm);
+  background: var(--kenga-bg);
+  color: var(--kenga-fg);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--kenga-accent);
+  box-shadow: 0 0 0 2px var(--kenga-accent-bg);
 }

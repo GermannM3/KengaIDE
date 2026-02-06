@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:build": "tauri build",
-    "tauri:dev": "tauri dev"
+    "tauri:dev": "tauri dev",
+    "clean:build": "npx rimraf dist && npm run build",
+    "tauri:clean:build": "npx rimraf dist && npm run tauri:build",
+    "run:built": "node scripts/run-built.js"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",

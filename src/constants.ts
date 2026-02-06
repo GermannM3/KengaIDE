@@ -21,9 +21,69 @@ export const THEME_MONACO: Record<"light" | "dark" | "high-contrast", string> = 
 
 export const THEME_CSS: Record<
   "light" | "dark" | "high-contrast",
-  { bg: string; fg: string; panel: string; border: string; accent: string; muted: string; accentBg: string }
+  {
+    bg: string;
+    fg: string;
+    panel: string;
+    panelElevated: string;
+    sidebarBg: string;
+    border: string;
+    accent: string;
+    muted: string;
+    accentBg: string;
+    borderSubtle: string;
+    tabActive: string;
+    tabInactive: string;
+    error: string;
+    success: string;
+  }
 > = {
-  light: { bg: "#ffffff", fg: "#333333", panel: "#f5f5f5", border: "#e0e0e0", accent: "#1e88e5", muted: "#666666", accentBg: "#e3f2fd" },
-  dark: { bg: "#1e1e1e", fg: "#d4d4d4", panel: "#252526", border: "#3c3c3c", accent: "#0e639c", muted: "#a0a0a0", accentBg: "rgba(14,99,156,0.35)" },
-  "high-contrast": { bg: "#000000", fg: "#ffffff", panel: "#1a1a1a", border: "#ffffff", accent: "#ffff00", muted: "#cccccc", accentBg: "rgba(255,255,0,0.2)" },
+  light: {
+    bg: "#ffffff",
+    fg: "#333333",
+    panel: "#f3f3f3",
+    panelElevated: "#ffffff",
+    sidebarBg: "#f3f3f3",
+    border: "#e5e5e5",
+    accent: "#0078d4",
+    muted: "#6e6e6e",
+    accentBg: "rgba(0, 120, 212, 0.1)",
+    borderSubtle: "#e8e8e8",
+    tabActive: "#ffffff",
+    tabInactive: "transparent",
+    error: "#c62828",
+    success: "#2e7d32",
+  },
+  dark: {
+    bg: "#1e1e1e",
+    fg: "#cccccc",
+    panel: "#252526",
+    panelElevated: "#2d2d30",
+    sidebarBg: "#252526",
+    border: "#3c3c3c",
+    accent: "#0a84ff",
+    muted: "#858585",
+    accentBg: "rgba(10, 132, 255, 0.25)",
+    borderSubtle: "#3c3c3c",
+    tabActive: "#1e1e1e",
+    tabInactive: "transparent",
+    error: "#f14c4c",
+    success: "#89d185",
+  },
+  "high-contrast": {
+    bg: "#000000",
+    fg: "#ffffff",
+    panel: "#1c1c1e",
+    panelElevated: "#2d2d30",
+    sidebarBg: "#1c1c1e",
+    border: "#ffffff",
+    accent: "#64d2ff",
+    muted: "#e5e5ea",
+    accentBg: "rgba(100, 210, 255, 0.2)",
+    borderSubtle: "#666666",
+    tabActive: "#000000",
+    tabInactive: "transparent",
+    error: "#ff6b6b",
+    success: "#4ec9b0",
+  },
 };

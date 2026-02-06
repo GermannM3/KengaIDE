@@ -10,7 +10,6 @@ import {
   MAX_RIGHT_PANEL,
   MIN_LEFT_PANEL,
   MIN_RIGHT_PANEL,
-  RESIZER_WIDTH,
   STORAGE_LEFT,
   STORAGE_RIGHT,
   STORAGE_THEME,
@@ -112,6 +111,8 @@ function App() {
   const [showAddProviderModal, setShowAddProviderModal] = useState(false);
   const [showSwitchModelModal, setShowSwitchModelModal] = useState(false);
   const [addProviderApiKey, setAddProviderApiKey] = useState("");
+  const [addProviderType, setAddProviderType] = useState<"openai" | "kimi" | "mistral" | "custom">("openai");
+  const [addProviderBaseUrl, setAddProviderBaseUrl] = useState("");
   const [addProviderError, setAddProviderError] = useState<string | null>(null);
   const [aiProviders, setAiProviders] = useState<{ id: string; name: string; available: boolean }[]>([]);
   const [activeProviderId, setActiveProviderId] = useState<string | null>(null);
@@ -182,10 +183,17 @@ function App() {
     document.documentElement.style.setProperty("--kenga-bg", css.bg);
     document.documentElement.style.setProperty("--kenga-fg", css.fg);
     document.documentElement.style.setProperty("--kenga-panel", css.panel);
+    document.documentElement.style.setProperty("--kenga-panel-elevated", css.panelElevated);
+    document.documentElement.style.setProperty("--kenga-sidebar-bg", css.sidebarBg);
     document.documentElement.style.setProperty("--kenga-border", css.border);
     document.documentElement.style.setProperty("--kenga-accent", css.accent);
     document.documentElement.style.setProperty("--kenga-muted", css.muted);
     document.documentElement.style.setProperty("--kenga-accent-bg", css.accentBg);
+    document.documentElement.style.setProperty("--kenga-border-subtle", css.borderSubtle);
+    document.documentElement.style.setProperty("--kenga-tab-active", css.tabActive);
+    document.documentElement.style.setProperty("--kenga-tab-inactive", css.tabInactive);
+    document.documentElement.style.setProperty("--kenga-error", css.error);
+    document.documentElement.style.setProperty("--kenga-success", css.success);
   }, [theme]);
 
   useEffect(() => {
@@ -507,9 +515,15 @@ function App() {
           case "thinking":
             break;
           case "tool_call":
-          case "tool_result":
           case "patch_apply_started":
             break;
+          case "tool_result": {
+            const pl = ev.payload as { name?: string; success?: boolean };
+            if (pl.name === "create_project" && pl.success) {
+              refreshProjectTree();
+            }
+            break;
+          }
           case "patch_apply_success": {
             const patchedPath = (ev.payload as { path: string }).path;
             if (invokeRef.current && patchedPath === currentFilePath) {
@@ -603,7 +617,14 @@ function App() {
       const requestId = (await inv("ai_request_stream", { payload })) as string;
       setStreamingRequestId(requestId);
     } catch (e) {
-      setAiResponse(`Error: ${String(e)}`);
+      const msg = String(e);
+      let hint = "";
+      if (msg.includes("Provider unavailable")) {
+        hint = msg.includes("BackendAlreadyInitialized")
+          ? "\n\nМодель уже загружена. Чтобы сменить модель — перезапустите приложение."
+          : "\n\nЗагрузите локальную модель (Модель → DeepSeek или SmolLM2) или добавьте API ключ (+ API).";
+      }
+      setAiResponse(`Ошибка: ${msg}${hint}`);
     }
   };
 
@@ -722,6 +743,8 @@ function App() {
       case "add_provider":
         setShowAddProviderModal(true);
         setAddProviderApiKey("");
+        setAddProviderType("openai");
+        setAddProviderBaseUrl("");
         setAddProviderError(null);
         break;
       case "switch_model":
@@ -779,7 +802,14 @@ function App() {
       const requestId = (await inv("ai_agent_request", { payload })) as string;
       setAgentRequestId(requestId);
     } catch (e) {
-      setAiResponse(`Error: ${String(e)}`);
+      const msg = String(e);
+      let hint = "";
+      if (msg.includes("Provider unavailable")) {
+        hint = msg.includes("BackendAlreadyInitialized")
+          ? "\n\nМодель уже загружена. Чтобы сменить модель — перезапустите приложение."
+          : "\n\nЗагрузите локальную модель (Модель → DeepSeek или SmolLM2) или добавьте API ключ (+ API).";
+      }
+      setAiResponse(`Ошибка: ${msg}${hint}`);
     }
   };
 
@@ -840,68 +870,29 @@ function App() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--kenga-bg)", color: "var(--kenga-fg)" }}>
+    <div className="kenga-workbench">
       {inTauri && (
-        <div
-          ref={menuContainerRef}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "2px 8px",
-            background: "var(--kenga-panel)",
-            color: "var(--kenga-fg)",
-            borderBottom: "1px solid var(--kenga-border)",
-            fontSize: 13,
-            gap: 4,
-          }}
-        >
+        <div ref={menuContainerRef} className="kenga-menu-bar">
           <div style={{ position: "relative" }}>
             <button
               type="button"
               onClick={() => setMenuOpen((prev) => (prev === "file" ? null : "file"))}
-              style={{
-                padding: "4px 10px",
-                border: "none",
-                background: menuOpen === "file" ? "var(--kenga-panel)" : "transparent",
-                cursor: "pointer",
-                borderRadius: 4,
-              }}
+              className={`kenga-menu-trigger ${menuOpen === "file" ? "kenga-active" : ""}`}
             >
               Файл
             </button>
             {menuOpen === "file" && (
               <div
+                className="kenga-menu"
                 style={{
                   position: "absolute",
                   top: "100%",
                   left: 0,
-                  marginTop: 0,
-                  background: "var(--kenga-bg)",
-                  border: "1px solid var(--kenga-border)",
-                  borderRadius: 4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  minWidth: 180,
+                  marginTop: 4,
                   zIndex: 2000,
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(null);
-                    setShowCreateModal(true);
-                    setCreateError(null);
-                  }}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "8px 12px",
-                    textAlign: "left",
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    fontSize: 13,
-                  }}
-                >
+                <button type="button" className="kenga-menu-item" onClick={() => { setMenuOpen(null); setShowCreateModal(true); setCreateError(null); }}>
                   Новый проект
                 </button>
                 <button
@@ -970,28 +961,18 @@ function App() {
             <button
               type="button"
               onClick={() => setMenuOpen((prev) => (prev === "view" ? null : "view"))}
-              style={{
-                padding: "4px 10px",
-                border: "none",
-                background: menuOpen === "view" ? "var(--kenga-panel)" : "transparent",
-                cursor: "pointer",
-                borderRadius: 4,
-              }}
+              className={`kenga-menu-trigger ${menuOpen === "view" ? "kenga-active" : ""}`}
             >
               Вид
             </button>
             {menuOpen === "view" && (
               <div
+                className="kenga-menu"
                 style={{
                   position: "absolute",
                   top: "100%",
                   left: 0,
-                  marginTop: 2,
-                  background: "var(--kenga-bg)",
-                  border: "1px solid var(--kenga-border)",
-                  borderRadius: 4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  minWidth: 180,
+                  marginTop: 4,
                   zIndex: 2000,
                 }}
               >
@@ -1022,28 +1003,18 @@ function App() {
             <button
               type="button"
               onClick={() => setMenuOpen((prev) => (prev === "ai" ? null : "ai"))}
-              style={{
-                padding: "4px 10px",
-                border: "none",
-                background: menuOpen === "ai" ? "var(--kenga-panel)" : "transparent",
-                cursor: "pointer",
-                borderRadius: 4,
-              }}
+              className={`kenga-menu-trigger ${menuOpen === "ai" ? "kenga-active" : ""}`}
             >
               AI
             </button>
             {menuOpen === "ai" && (
               <div
+                className="kenga-menu"
                 style={{
                   position: "absolute",
                   top: "100%",
                   left: 0,
-                  marginTop: 2,
-                  background: "var(--kenga-bg)",
-                  border: "1px solid var(--kenga-border)",
-                  borderRadius: 4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  minWidth: 180,
+                  marginTop: 4,
                   zIndex: 2000,
                 }}
               >
@@ -1070,28 +1041,18 @@ function App() {
             <button
               type="button"
               onClick={() => setMenuOpen((prev) => (prev === "tools" ? null : "tools"))}
-              style={{
-                padding: "4px 10px",
-                border: "none",
-                background: menuOpen === "tools" ? "var(--kenga-panel)" : "transparent",
-                cursor: "pointer",
-                borderRadius: 4,
-              }}
+              className={`kenga-menu-trigger ${menuOpen === "tools" ? "kenga-active" : ""}`}
             >
               Инструменты
             </button>
             {menuOpen === "tools" && (
               <div
+                className="kenga-menu"
                 style={{
                   position: "absolute",
                   top: "100%",
                   left: 0,
-                  marginTop: 2,
-                  background: "var(--kenga-bg)",
-                  border: "1px solid var(--kenga-border)",
-                  borderRadius: 4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  minWidth: 180,
+                  marginTop: 4,
                   zIndex: 2000,
                 }}
               >
@@ -1105,28 +1066,18 @@ function App() {
             <button
               type="button"
               onClick={() => setMenuOpen((prev) => (prev === "help" ? null : "help"))}
-              style={{
-                padding: "4px 10px",
-                border: "none",
-                background: menuOpen === "help" ? "var(--kenga-panel)" : "transparent",
-                cursor: "pointer",
-                borderRadius: 4,
-              }}
+              className={`kenga-menu-trigger ${menuOpen === "help" ? "kenga-active" : ""}`}
             >
               Справка
             </button>
             {menuOpen === "help" && (
               <div
+                className="kenga-menu"
                 style={{
                   position: "absolute",
                   top: "100%",
                   left: 0,
-                  marginTop: 2,
-                  background: "var(--kenga-bg)",
-                  border: "1px solid var(--kenga-border)",
-                  borderRadius: 4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  minWidth: 180,
+                  marginTop: 4,
                   zIndex: 2000,
                 }}
               >
@@ -1146,89 +1097,36 @@ function App() {
         </div>
       )}
       {showSaveAsModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 3000,
-          }}
-          onClick={() => setShowSaveAsModal(false)}
-        >
-          <div
-            style={{
-              background: "var(--kenga-bg)",
-              padding: 20,
-              borderRadius: 8,
-              minWidth: 400,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: "0 0 12px 0" }}>Сохранить как</h3>
+        <div className="kenga-modal-backdrop" style={{ zIndex: 3000 }} onClick={() => setShowSaveAsModal(false)}>
+          <div className="kenga-modal" style={{ minWidth: 400 }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="kenga-modal-title">Сохранить как</h3>
             <input
               type="text"
               value={saveAsPath}
               onChange={(e) => setSaveAsPath(e.target.value)}
               placeholder="путь/к/файлу.txt"
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                fontSize: 13,
-                border: "1px solid #ccc",
-                borderRadius: 4,
-                boxSizing: "border-box",
-              }}
+              style={{ width: "100%", boxSizing: "border-box" }}
             />
-            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                onClick={() => setShowSaveAsModal(false)}
-                style={{ padding: "8px 16px", fontSize: 13 }}
-              >
+            <div className="kenga-modal-actions">
+              <button type="button" className="kenga-btn-secondary" onClick={() => setShowSaveAsModal(false)}>
                 Отмена
               </button>
-              <button
-                type="button"
-                onClick={handleSaveAs}
-                style={{
-                  padding: "8px 16px",
-                  fontSize: 13,
-                  background: "#1e88e5",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                }}
-              >
+              <button type="button" className="kenga-btn-primary" onClick={handleSaveAs}>
                 Сохранить
               </button>
             </div>
           </div>
         </div>
       )}
-      <header
-        style={{
-          padding: "8px 16px",
-          borderBottom: "1px solid var(--kenga-border)",
-          background: "var(--kenga-panel)",
-          color: "var(--kenga-fg)",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <strong>KengaIDE</strong>
+      <header className="kenga-header">
+        <strong className="kenga-header-title">KengaIDE</strong>
         {inTauri && (
           <>
             <button
               type="button"
               onClick={handleOpenProject}
-              style={{ fontSize: 12, padding: "4px 10px" }}
+              className="kenga-btn-bar"
+              style={{ fontSize: 13 }}
             >
               Открыть папку
             </button>
@@ -1238,18 +1136,16 @@ function App() {
                 setShowCreateModal(true);
                 setCreateError(null);
               }}
-              style={{ fontSize: 12, padding: "4px 10px" }}
+              className="kenga-btn-bar"
+              style={{ fontSize: 13 }}
             >
               Новый проект
             </button>
             <button
               type="button"
               onClick={() => setSplitActive((prev) => !prev)}
-              style={{
-                fontSize: 12,
-                padding: "4px 10px",
-                background: splitActive ? "var(--kenga-accent-bg)" : "transparent",
-              }}
+              className={`kenga-btn-bar ${splitActive ? "kenga-active" : ""}`}
+              style={{ fontSize: 13 }}
               title="Разделить вид (Ctrl+клик по файлу — открыть во втором)"
             >
               Split
@@ -1266,7 +1162,8 @@ function App() {
                   }
                 }
               }}
-              style={{ fontSize: 12, padding: "4px 10px" }}
+              className="kenga-btn-bar"
+              style={{ fontSize: 13 }}
               title="Открыть папку настроек MCP (~/.kengaide, файл mcp.json)"
             >
               MCP
@@ -1274,17 +1171,7 @@ function App() {
           </>
         )}
         {projectPath && (
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--kenga-muted)",
-              maxWidth: 280,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-            title={projectPath}
-          >
+          <span className="kenga-header-path" title={projectPath}>
             {projectPath}
           </span>
         )}
@@ -1296,7 +1183,8 @@ function App() {
                 setShowSwitchModelModal(true);
                 loadAiProviders();
               }}
-              style={{ fontSize: 11, padding: "4px 8px" }}
+              className="kenga-btn-bar"
+              style={{ fontSize: 12 }}
               title="Сменить модель / провайдер"
             >
               Модель
@@ -1308,7 +1196,8 @@ function App() {
                 setAddProviderApiKey("");
                 setAddProviderError(null);
               }}
-              style={{ fontSize: 11, padding: "4px 8px" }}
+              className="kenga-btn-bar"
+              style={{ fontSize: 12 }}
               title="Добавить AI через API (OpenAI и др.)"
             >
               + API
@@ -1316,18 +1205,12 @@ function App() {
           </>
         )}
         {tauriReady && !inTauri && (
-          <span style={{ fontSize: 11, color: "var(--kenga-muted)" }}>
-            Запустите приложение KengaIDE
-          </span>
+          <span className="kenga-status-muted">Запустите приложение KengaIDE</span>
         )}
         {(modelStatus === "ready" || modelSelection || activeProviderId) && (
           <span
-            style={{
-              fontSize: 11,
-              background: modelSelection ? "var(--kenga-accent-bg)" : "var(--kenga-panel)",
-              padding: "2px 8px",
-              borderRadius: 4,
-            }}
+            className="kenga-status-badge"
+            style={{ background: modelSelection ? "var(--kenga-accent-bg)" : "var(--kenga-panel)" }}
             title={modelSelection ? `Role: ${modelSelection.role}` : activeProviderId ? aiProviders.find((p) => p.id === activeProviderId)?.name : undefined}
           >
             {modelSelection
@@ -1338,38 +1221,16 @@ function App() {
           </span>
         )}
         {downloading && (
-          <span style={{ fontSize: 11, color: "var(--kenga-muted)" }}>
-            Downloading… {progressPct}%
-          </span>
+          <span className="kenga-status-muted">Downloading… {progressPct}%</span>
         )}
         {modelStatus === "not_loaded" && !downloading && !showDownloadDialog && (
-          <span style={{ fontSize: 11, color: "var(--kenga-muted)" }}>
-            Local model: not loaded
-          </span>
+          <span className="kenga-status-muted">Local model: not loaded</span>
         )}
       </header>
 
       {showDownloadDialog && modelInfo && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              padding: 24,
-              borderRadius: 8,
-              maxWidth: 400,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-            }}
-          >
+        <div className="kenga-modal-backdrop" style={{ zIndex: 1000 }}>
+          <div className="kenga-modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginTop: 0 }}>Офлайн-модель</h3>
             <p>
               Для офлайн-работы будет загружена российская нейромодель{" "}
@@ -1384,11 +1245,11 @@ function App() {
               </p>
             )}
             {downloadError && (
-              <p style={{ fontSize: 13, color: "#c62828", marginBottom: 12 }}>
+              <p style={{ fontSize: 13, color: "var(--kenga-error)", marginBottom: 12 }}>
                 Ошибка: {downloadError}
               </p>
             )}
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <div className="kenga-modal-actions">
               <button
                 onClick={() => {
                   setShowDownloadDialog(false);
@@ -1405,28 +1266,25 @@ function App() {
         </div>
       )}
 
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+      <div className="kenga-main">
         {projectPath && (
           <>
             <aside
+              className="kenga-sidebar"
               style={{
                 width: leftPanelWidth,
                 minWidth: MIN_LEFT_PANEL,
                 flexShrink: 0,
-                borderRight: "1px solid var(--kenga-border)",
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                background: "var(--kenga-panel)",
               }}
             >
-              <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--kenga-border)", fontSize: 12, fontWeight: 600 }}>
-                Файлы
-              </div>
-              <div style={{ flex: 1, overflow: "auto", padding: "6px 0" }}>
-                {projectTreeLoading && <div style={{ padding: 8, fontSize: 11, color: "var(--kenga-muted)" }}>Загрузка…</div>}
+              <div className="kenga-sidebar-title">Файлы</div>
+              <div className="kenga-sidebar-body">
+                {projectTreeLoading && <div className="kenga-sidebar-empty">Загрузка…</div>}
                 {!projectTreeLoading && projectTree && projectTree.length === 0 && (
-                  <div style={{ padding: 8, fontSize: 11, color: "var(--kenga-muted)" }}>Папка пуста</div>
+                  <div className="kenga-sidebar-empty">Папка пуста</div>
                 )}
                 {!projectTreeLoading && projectTree && projectTree.length > 0 && (
                   <FileTreeList
@@ -1442,15 +1300,7 @@ function App() {
             <div
               role="separator"
               aria-label="Изменить ширину панели файлов"
-              style={{
-                width: RESIZER_WIDTH,
-                minWidth: RESIZER_WIDTH,
-                flexShrink: 0,
-                cursor: "col-resize",
-                background: resizing === "left" ? "#1e88e5" : "#e0e0e0",
-                borderLeft: "1px solid #ccc",
-                borderRight: "1px solid #ccc",
-              }}
+              className={`kenga-resizer ${resizing === "left" ? "kenga-dragging" : ""}`}
               onMouseDown={(e) => {
                 if (e.button !== 0) return;
                 dragStartRef.current = { x: e.clientX, left: leftPanelWidth, right: rightPanelWidth };
@@ -1459,33 +1309,25 @@ function App() {
             />
           </>
         )}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <div className="kenga-editor-area">
           {!projectPath && inTauri && (
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "var(--kenga-bg, #fff)",
-                padding: 32,
-              }}
-            >
-              <h2 style={{ margin: "0 0 8px 0", fontSize: 20, color: "var(--kenga-fg, #333)" }}>Добро пожаловать в KengaIDE</h2>
-              <p style={{ margin: "0 0 24px 0", fontSize: 14, color: "var(--kenga-muted)" }}>Что хотите сделать?</p>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+            <div className="kenga-welcome">
+              <h2>Добро пожаловать в KengaIDE</h2>
+              <p>Что хотите сделать?</p>
+              <div className="kenga-welcome-actions">
                 <button
                   type="button"
+                  className="kenga-btn-primary"
                   onClick={() => { setShowCreateModal(true); setCreateError(null); }}
-                  style={{ padding: "12px 24px", fontSize: 14, background: "var(--kenga-accent, #1e88e5)", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}
+                  style={{ padding: "12px 24px", fontSize: 15 }}
                 >
                   Новый проект
                 </button>
                 <button
                   type="button"
+                  className="kenga-btn-secondary"
                   onClick={handleOpenProject}
-                  style={{ padding: "12px 24px", fontSize: 14, background: "var(--kenga-panel, #f5f5f5)", color: "var(--kenga-fg, #333)", border: "1px solid var(--kenga-border)", borderRadius: 8, cursor: "pointer" }}
+                  style={{ padding: "12px 24px", fontSize: 15 }}
                 >
                   Открыть папку
                 </button>
@@ -1493,60 +1335,24 @@ function App() {
             </div>
           )}
           {openFiles.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                background: "var(--kenga-panel, #f5f5f5)",
-                borderBottom: "1px solid var(--kenga-border, #ddd)",
-                minHeight: 32,
-                overflowX: "auto",
-              }}
-            >
+            <div className="kenga-tabs">
               {openFiles.map((path) => {
                 const name = path.split(/[/\\]/).pop() ?? path;
                 const isActive = path === currentFilePath;
                 return (
                   <div
                     key={path}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "4px 8px 4px 12px",
-                      background: isActive ? "var(--kenga-bg)" : "transparent",
-                      borderRight: "1px solid #ddd",
-                      cursor: "pointer",
-                      maxWidth: 180,
-                      minWidth: 60,
-                    }}
+                    className={`kenga-tab ${isActive ? "kenga-active" : ""}`}
                     onClick={() => handleSwitchTab(path)}
                     title={path}
                   >
-                    <span
-                      style={{
-                        flex: 1,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontSize: 12,
-                      }}
-                    >
-                      {name}
-                    </span>
+                    <span className="kenga-tab-label">{name}</span>
                     <button
                       type="button"
+                      className="kenga-tab-close"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCloseTab(path);
-                      }}
-                      style={{
-                        marginLeft: 4,
-                        padding: "0 4px",
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontSize: 14,
-                        lineHeight: 1,
                       }}
                     >
                       ×
@@ -1587,27 +1393,10 @@ function App() {
             )}
             {splitActive && projectPath && (
               <>
-                <div
-                  style={{
-                    width: 4,
-                    background: "#ddd",
-                    cursor: "col-resize",
-                    flexShrink: 0,
-                  }}
-                />
+                <div className="kenga-split-divider" />
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
                   {splitFilePath && (
-                    <div
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: 11,
-                        color: "var(--kenga-muted)",
-                        background: "#f0f0f0",
-                        borderBottom: "1px solid #ddd",
-                      }}
-                    >
-                      Split: {splitFilePath}
-                    </div>
+                    <div className="kenga-split-header">Split: {splitFilePath}</div>
                   )}
                   <Editor
                     height="100%"
@@ -1639,15 +1428,7 @@ function App() {
         <div
           role="separator"
           aria-label="Изменить ширину панели AI"
-          style={{
-            width: RESIZER_WIDTH,
-            minWidth: RESIZER_WIDTH,
-            flexShrink: 0,
-            cursor: "col-resize",
-            background: resizing === "right" ? "#1e88e5" : "#e0e0e0",
-            borderLeft: "1px solid #ccc",
-            borderRight: "1px solid #ccc",
-          }}
+          className={`kenga-resizer ${resizing === "right" ? "kenga-dragging" : ""}`}
           onMouseDown={(e) => {
             if (e.button !== 0) return;
             dragStartRef.current = { x: e.clientX, left: leftPanelWidth, right: rightPanelWidth };
@@ -1655,55 +1436,41 @@ function App() {
           }}
         />
         <aside
-          style={{
-            width: rightPanelWidth,
-            minWidth: MIN_RIGHT_PANEL,
-            flexShrink: 0,
-            borderLeft: "1px solid var(--kenga-border)",
-            padding: 16,
-            overflow: "auto",
-            background: "var(--kenga-bg)",
-          }}
+          className="kenga-ai-panel"
+          style={{ width: rightPanelWidth, minWidth: MIN_RIGHT_PANEL, flexShrink: 0 }}
         >
-          <h3 style={{ marginTop: 0 }}>AI</h3>
+          <h3 className="kenga-ai-panel-title">AI</h3>
+          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {(agentRequestId || streamingRequestId || lastAgentMessage || toolTimeline.length > 0) && (
-            <div
-              style={{
-                display: "flex",
-                gap: 6,
-                marginBottom: 12,
-                flexWrap: "wrap",
-                padding: "8px 0",
-                borderBottom: "1px solid var(--kenga-border, #eee)",
-              }}
-            >
+            <div className="kenga-ai-toolbar">
               <button
                 type="button"
+                className="kenga-ai-btn-run"
                 onClick={() => handleAgentRequest()}
                 disabled={!!streamingRequestId || !!agentRequestId || !projectPath}
-                style={{ padding: "4px 10px", fontSize: 11, background: projectPath && !agentRequestId ? "var(--kenga-accent)" : "var(--kenga-muted)", color: "#fff", border: "none", borderRadius: 4, cursor: projectPath ? "pointer" : "not-allowed" }}
                 title="Запустить агента"
               >
                 ▶ Run
               </button>
               <button
                 type="button"
+                className="kenga-ai-btn-stop"
                 onClick={() => { if (agentRequestId) invokeRef.current?.("ai_cancel", { requestId: agentRequestId }); if (streamingRequestId) handleStopGeneration(); }}
                 disabled={!agentRequestId && !streamingRequestId}
-                style={{ padding: "4px 10px", fontSize: 11, background: agentRequestId || streamingRequestId ? "#c62828" : "var(--kenga-muted)", color: "#fff", border: "none", borderRadius: 4, cursor: agentRequestId || streamingRequestId ? "pointer" : "not-allowed" }}
                 title="Остановить"
               >
                 ⏹ Stop
               </button>
               {lastAgentMessage && !agentRequestId && !streamingRequestId && (
                 <>
-                  <button type="button" onClick={() => handleAgentRequest(lastAgentMessage)} style={{ padding: "4px 10px", fontSize: 11 }} title="Повторить">↺ Retry</button>
-                  <button type="button" onClick={() => handleAgentRequest(`${lastAgentMessage}\n\nКонтекст: ${currentFilePath ?? ""}\n${code.slice(0, 2000)}`)} style={{ padding: "4px 10px", fontSize: 11 }} title="С контекстом">🧠 Retry+</button>
+                  <button type="button" className="kenga-ai-btn-secondary" onClick={() => handleAgentRequest(lastAgentMessage)} title="Повторить">↺ Retry</button>
+                  <button type="button" className="kenga-ai-btn-secondary" onClick={() => handleAgentRequest(`${lastAgentMessage}\n\nКонтекст: ${currentFilePath ?? ""}\n${code.slice(0, 2000)}`)} title="С контекстом">🧠 Retry+</button>
                 </>
               )}
               {appliedPatches.length > 0 && !agentRequestId && (
                 <button
                   type="button"
+                  className="kenga-ai-btn-danger"
                   onClick={async () => {
                     const inv = invokeRef.current;
                     if (!inv) return;
@@ -1720,7 +1487,6 @@ function App() {
                       setAiResponse((prev) => prev + `\nОшибка отката: ${String(e)}\n`);
                     }
                   }}
-                  style={{ padding: "4px 10px", fontSize: 11, color: "#c62828" }}
                   title="Откатить изменения"
                 >
                   ⏪ Rollback
@@ -1729,34 +1495,16 @@ function App() {
             </div>
           )}
           {toolTimeline.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 16, flexShrink: 0 }}>
               <button
                 type="button"
+                className="kenga-tool-timeline-toggle"
                 onClick={() => setToolTimelineExpanded(!toolTimelineExpanded)}
-                style={{
-                  width: "100%",
-                  padding: "6px 0",
-                  textAlign: "left",
-                  border: "none",
-                  background: "transparent",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
               >
                 {toolTimelineExpanded ? "▼" : "▶"} Tool timeline ({toolTimeline.length})
               </button>
               {toolTimelineExpanded && (
-                <div
-                  style={{
-                    maxHeight: 200,
-                    overflow: "auto",
-                    fontSize: 11,
-                    background: "#f9f9f9",
-                    padding: 8,
-                    borderRadius: 4,
-                  }}
-                >
+                <div className="kenga-tool-timeline">
                   {toolTimeline
                     .filter(
                       (t) =>
@@ -1765,31 +1513,22 @@ function App() {
                         t.kind !== "session_started"
                     )
                     .map((t, i) => (
-                    <div key={i} style={{ marginBottom: 6, display: "flex", alignItems: "flex-start", gap: 6 }}>
+                    <div key={i} className="kenga-tool-entry">
                       {t.kind === "thinking" && (
-                        <span style={{ color: "#7e57c2", fontSize: 12 }} title="Модель генерирует ответ">
+                        <span className="kenga-tool-thinking" title="Модель генерирует ответ">
                           🧠 Thinking…
                         </span>
                       )}
                       {t.kind === "tool_call" && (
                         <>
-                          <span style={{ color: "var(--kenga-accent)", flexShrink: 0 }}>🛠</span>
-                          <span style={{ color: "var(--kenga-accent)" }}>
+                          <span className="kenga-tool-call" style={{ flexShrink: 0 }}>🛠</span>
+                          <span className="kenga-tool-call">
                             {t.name}
                             {t.path && (
                               <button
                                 type="button"
+                                className="kenga-tool-path-btn"
                                 onClick={() => handleOpenFile(t.path!)}
-                                style={{
-                                  marginLeft: 4,
-                                  padding: "0 4px",
-                                  fontSize: 10,
-                                  background: "var(--kenga-accent-bg)",
-                                  border: "none",
-                                  borderRadius: 2,
-                                  cursor: "pointer",
-                                  textDecoration: "underline",
-                                }}
                                 title={`Открыть ${t.path}`}
                               >
                                 {t.path}
@@ -1800,10 +1539,10 @@ function App() {
                       )}
                       {t.kind === "tool_result" && (
                         <>
-                          <span style={{ color: t.success ? "#2e7d32" : "#c62828", flexShrink: 0 }}>
+                          <span className={t.success ? "kenga-tool-result-ok" : "kenga-tool-result-err"} style={{ flexShrink: 0 }}>
                             {t.success ? "✓" : "⚠"}
                           </span>
-                          <span style={{ color: t.success ? "#2e7d32" : "#c62828", fontSize: 11 }}>
+                          <span className={t.success ? "kenga-tool-result-ok" : "kenga-tool-result-err"}>
                             {t.output?.slice(0, 100)}
                             {(t.output?.length ?? 0) > 100 ? "…" : ""}
                           </span>
@@ -1811,21 +1550,14 @@ function App() {
                       )}
                       {t.kind === "patch_apply_success" && (
                         <>
-                          <span style={{ color: "#2e7d32", flexShrink: 0 }}>📄</span>
-                          <span style={{ color: "#2e7d32" }}>
+                          <span className="kenga-tool-result-ok" style={{ flexShrink: 0 }}>📄</span>
+                          <span className="kenga-tool-result-ok">
                             Patched{" "}
                             <button
                               type="button"
+                              className="kenga-tool-path-btn"
                               onClick={() => handleOpenFile(t.path!)}
-                              style={{
-                                padding: "0 4px",
-                                fontSize: 10,
-                                background: "rgba(46,125,50,0.15)",
-                                border: "none",
-                                borderRadius: 2,
-                                cursor: "pointer",
-                                textDecoration: "underline",
-                              }}
+                              style={{ background: "rgba(46,125,50,0.15)" }}
                             >
                               {t.path}
                             </button>
@@ -1834,16 +1566,16 @@ function App() {
                       )}
                       {t.kind === "patch_apply_error" && (
                         <>
-                          <span style={{ color: "#c62828", flexShrink: 0 }}>⚠</span>
-                          <span style={{ color: "#c62828" }}>
+                          <span className="kenga-tool-result-err" style={{ flexShrink: 0 }}>⚠</span>
+                          <span className="kenga-tool-result-err">
                             {t.path}: {t.message}
                           </span>
                         </>
                       )}
                       {t.kind === "done" && (
                         <>
-                          <span style={{ color: "#2e7d32", flexShrink: 0 }}>✅</span>
-                          <span style={{ color: "var(--kenga-muted)", fontSize: 11 }}>{t.message?.slice(0, 80)}{(t.message?.length ?? 0) > 80 ? "…" : ""}</span>
+                          <span className="kenga-tool-result-ok" style={{ flexShrink: 0 }}>✅</span>
+                          <span className="kenga-status-muted">{t.message?.slice(0, 80)}{(t.message?.length ?? 0) > 80 ? "…" : ""}</span>
                         </>
                       )}
                     </div>
@@ -1882,9 +1614,9 @@ function App() {
             placeholder="Сообщение..."
             value={aiInput}
             onChange={(e) => setAiInput(e.target.value)}
-            style={{ width: "100%", marginBottom: 8, padding: 8 }}
+            style={{ width: "100%", marginBottom: 8, padding: 8, flexShrink: 0 }}
           />
-          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", flexShrink: 0 }}>
             <button
               onClick={() => handleAiRequest("chat")}
               disabled={!!streamingRequestId}
@@ -1943,34 +1675,23 @@ function App() {
           )}
           <pre
             ref={responseEndRef}
+            className="kenga-ai-response"
             style={{
-              background: "var(--kenga-panel)",
-              padding: 12,
-              fontSize: 12,
               overflow: "auto",
               flex: 1,
-              minHeight: 120,
+              minHeight: 0,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
             }}
           >
             {aiResponse || "Ответ появится здесь"}
           </pre>
+          </div>
         </aside>
       </div>
 
       {inTauri && (
-        <footer
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            padding: "4px 12px",
-            fontSize: 11,
-            background: "var(--kenga-panel, #f5f5f5)",
-            color: "var(--kenga-fg, #333)",
-            borderTop: "1px solid var(--kenga-border, #e0e0e0)",
-            flexShrink: 0,
-          }}
-        >
+        <footer className="kenga-status-bar">
           <span title="Проект">{projectPath ? (projectPath.split(/[/\\]/).pop() ?? projectPath) : "—"}</span>
           <span style={{ color: "var(--kenga-border)" }}>|</span>
           <span title="Git">{gitStatus ? `${gitStatus.branch}${gitStatus.changes > 0 ? ` • ${gitStatus.changes} изменений` : ""}` : "—"}</span>
@@ -1988,28 +1709,16 @@ function App() {
 
       {showCreateModal && inTauri && (
         <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
+          className="kenga-modal-backdrop"
+          style={{ zIndex: 1000 }}
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            style={{
-              background: "var(--kenga-bg)",
-              padding: 20,
-              borderRadius: 8,
-              minWidth: 360,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-            }}
+            className="kenga-modal"
+            style={{ minWidth: 360 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: "0 0 16px 0", fontSize: 16 }}>Новый проект</h3>
+            <h3 className="kenga-modal-title">Новый проект</h3>
             <div style={{ marginBottom: 12 }}>
               <label htmlFor="create-template" style={{ display: "block", fontSize: 12, marginBottom: 4 }}>Шаблон</label>
               <select
@@ -2051,13 +1760,13 @@ function App() {
               </div>
             </div>
             {createError && (
-              <div style={{ color: "#c62828", fontSize: 12, marginBottom: 12 }}>{createError}</div>
+              <div style={{ color: "var(--kenga-error)", fontSize: 12, marginBottom: 12 }}>{createError}</div>
             )}
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setShowCreateModal(false)}>
+            <div className="kenga-modal-actions">
+              <button type="button" className="kenga-btn-secondary" onClick={() => setShowCreateModal(false)}>
                 Отмена
               </button>
-              <button type="button" onClick={handleCreateProject} style={{ background: "var(--kenga-accent)", color: "#fff" }}>
+              <button type="button" className="kenga-btn-primary" onClick={handleCreateProject}>
                 Создать
               </button>
             </div>
@@ -2067,27 +1776,13 @@ function App() {
 
       {showCommandPalette && inTauri && (
         <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.3)",
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            paddingTop: "15vh",
-            zIndex: 2000,
-          }}
+          className="kenga-modal-backdrop"
+          style={{ zIndex: 2000, alignItems: "flex-start", paddingTop: "15vh" }}
           onClick={() => setShowCommandPalette(false)}
         >
           <div
-            style={{
-              background: "var(--kenga-bg)",
-              borderRadius: 8,
-              boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-              minWidth: 480,
-              maxWidth: 560,
-              overflow: "hidden",
-            }}
+            className="kenga-modal"
+            style={{ minWidth: 480, maxWidth: 560, overflow: "hidden", padding: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
             <input
@@ -2117,7 +1812,7 @@ function App() {
                 padding: "12px 16px",
                 fontSize: 14,
                 border: "none",
-                borderBottom: "1px solid var(--kenga-border)",
+                borderBottom: "1px solid var(--kenga-border-subtle)",
                 outline: "none",
                 boxSizing: "border-box",
               }}
@@ -2253,7 +1948,7 @@ function App() {
                       setDownloadProgress(null);
                       setDownloadError(null);
                       try {
-                        await inv("start_model_download_provider", { providerId: p.id });
+                        await inv("start_model_download_provider", { args: { provider_id: p.id } });
                         refreshStatus();
                         try {
                           localStorage.setItem(STORAGE_WELCOME_DISMISSED, "1");
@@ -2468,10 +2163,24 @@ function App() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>Добавить OpenAI провайдер</h3>
+            <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>Добавить API провайдер</h3>
             <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "var(--kenga-muted)" }}>
-              Введите API key от OpenAI (sk-...). Ключ сохраняется в ~/.kengaide/ai_config.json
+              OpenAI, Kimi, Mistral — API key. Custom — укажите base_url.
             </p>
+            <p style={{ margin: "0 0 8px 0", fontSize: 12 }}>Тип</p>
+            <select
+              value={addProviderType}
+              onChange={(e) => {
+                setAddProviderType(e.target.value as "openai" | "kimi" | "mistral" | "custom");
+                setAddProviderError(null);
+              }}
+              style={{ width: "100%", padding: 10, marginBottom: 12, boxSizing: "border-box" }}
+            >
+              <option value="openai">OpenAI (GPT)</option>
+              <option value="kimi">Kimi (Moonshot)</option>
+              <option value="mistral">Mistral AI</option>
+              <option value="custom">Custom (OpenAI-совместимый)</option>
+            </select>
             <input
               type="password"
               value={addProviderApiKey}
@@ -2479,9 +2188,21 @@ function App() {
                 setAddProviderApiKey(e.target.value);
                 setAddProviderError(null);
               }}
-              placeholder="sk-..."
-              style={{ width: "100%", padding: 10, marginBottom: 12, boxSizing: "border-box" }}
+              placeholder={addProviderType === "openai" ? "sk-..." : "API key"}
+              style={{ width: "100%", padding: 10, marginBottom: addProviderType === "custom" ? 8 : 12, boxSizing: "border-box" }}
             />
+            {addProviderType === "custom" && (
+              <input
+                type="text"
+                value={addProviderBaseUrl}
+                onChange={(e) => {
+                  setAddProviderBaseUrl(e.target.value);
+                  setAddProviderError(null);
+                }}
+                placeholder="https://api.example.com/v1"
+                style={{ width: "100%", padding: 10, marginBottom: 12, boxSizing: "border-box" }}
+              />
+            )}
             {addProviderError && (
               <div style={{ color: "#c62828", fontSize: 12, marginBottom: 12 }}>{addProviderError}</div>
             )}
@@ -2496,15 +2217,21 @@ function App() {
                   if (!inv) return;
                   setAddProviderError(null);
                   try {
-                    await inv("add_openai_provider", { api_key: addProviderApiKey });
+                    await inv("add_api_provider", {
+                      provider_type: addProviderType,
+                      api_key: addProviderApiKey,
+                      base_url: addProviderType === "custom" ? addProviderBaseUrl : undefined,
+                    });
                     setShowAddProviderModal(false);
                     setAddProviderApiKey("");
-                    setAiResponse((prev) => prev + "\nOpenAI провайдер добавлен.\n");
+                    setAddProviderBaseUrl("");
+                    loadAiProviders();
+                    setAiResponse((prev) => prev + `\nПровайдер ${addProviderType} добавлен.\n`);
                   } catch (e) {
                     setAddProviderError(String(e));
                   }
                 }}
-                disabled={!addProviderApiKey.trim()}
+                disabled={!addProviderApiKey.trim() || (addProviderType === "custom" && !addProviderBaseUrl.trim())}
                 style={{ background: "var(--kenga-accent)", color: "#fff" }}
               >
                 Добавить
@@ -2516,87 +2243,64 @@ function App() {
 
       {showSwitchModelModal && inTauri && (
         <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2100,
-          }}
+          className="kenga-modal-backdrop"
+          style={{ zIndex: 2100 }}
           onClick={() => setShowSwitchModelModal(false)}
         >
           <div
-            style={{
-              background: "var(--kenga-bg)",
-              padding: 20,
-              borderRadius: 8,
-              minWidth: 360,
-              maxHeight: 400,
-              overflow: "auto",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-            }}
+            className="kenga-modal"
+            style={{ minWidth: 360, maxHeight: 400, overflow: "auto" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>Сменить провайдер</h3>
+            <h3 className="kenga-modal-title">Сменить провайдер</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {aiProviders.map((p) => (
                 <div
                   key={p.id}
+                  onClick={async () => {
+                    const inv = invokeRef.current;
+                    if (!inv) return;
+                    try {
+                      await inv("set_active_provider", { args: { provider_id: p.id } });
+                      setActiveProviderId(p.id);
+                      setShowSwitchModelModal(false);
+                      loadAiProviders();
+                    } catch (err) {
+                      setAiResponse((prev) => prev + `\nОшибка: ${String(err)}\n`);
+                    }
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: 12,
                     background: activeProviderId === p.id ? "var(--kenga-accent-bg)" : "var(--kenga-panel)",
-                    border: "1px solid var(--kenga-border)",
-                    borderRadius: 4,
+                    border: "1px solid var(--kenga-border-subtle)",
+                    borderRadius: "var(--kenga-radius-sm, 6px)",
+                    cursor: "pointer",
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const inv = invokeRef.current;
-                      if (!inv) return;
-                      try {
-                        await inv("set_active_provider", { providerId: p.id });
-                        setActiveProviderId(p.id);
-                        setShowSwitchModelModal(false);
-                        loadAiProviders();
-                      } catch (err) {
-                        setAiResponse((prev) => prev + `\nОшибка: ${String(err)}\n`);
-                      }
-                    }}
-                    style={{
-                      flex: 1,
-                      textAlign: "left",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0,
-                      color: "inherit",
-                    }}
-                  >
-                    <span style={{ fontWeight: 600 }}>{p.name}</span>
-                    <span style={{ fontSize: 11, color: "var(--kenga-muted)", marginLeft: 8 }}>
+                  <span>
+                    <strong>{p.name}</strong>
+                    {p.id.startsWith("local-") && (
+                      <span style={{ fontSize: 10, color: "var(--kenga-muted)", marginLeft: 4, fontWeight: 400 }}>
+                        (локально)
+                      </span>
+                    )}
+                    <span style={{ fontSize: 11, color: "var(--kenga-muted)", marginLeft: 6 }}>
                       {p.available ? "✓" : "—"}
                     </span>
-                  </button>
-                  {!p.available && (p.id.startsWith("local-")) && (
+                  </span>
+                  {!p.available && p.id.startsWith("local-") && (
                     <button
                       type="button"
-                      onClick={async () => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         const inv = invokeRef.current;
                         if (!inv) return;
-                        try {
-                          await inv("start_model_download_provider", { providerId: p.id });
-                          loadAiProviders();
-                        } catch (e) {
-                          setAiResponse((prev) => prev + `\nОшибка загрузки: ${String(e)}\n`);
-                        }
+                        inv("start_model_download_provider", { args: { provider_id: p.id } })
+                          .then(() => loadAiProviders())
+                          .catch((err) => setAiResponse((prev) => prev + `\nОшибка загрузки: ${String(err)}\n`));
                       }}
                       style={{ fontSize: 11, padding: "4px 8px" }}
                     >
@@ -2644,6 +2348,9 @@ function App() {
             </p>
             <p style={{ margin: "12px 0 0 0", fontSize: 12, color: "var(--kenga-muted)" }}>
               Tauri + React + Monaco + локальные и API-модели
+            </p>
+            <p style={{ margin: "8px 0 0 0", fontSize: 11, color: "var(--kenga-muted)", fontFamily: "monospace" }}>
+              Сборка: {__BUILD_TIME__.slice(0, 19).replace("T", " ")}
             </p>
             <button type="button" onClick={() => setShowAboutModal(false)} style={{ marginTop: 16, padding: "8px 16px" }}>
               Закрыть
